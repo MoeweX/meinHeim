@@ -126,6 +126,9 @@ class Webserver(object):
 
 if __name__ == '__main__':
 	conf = {
+		'global': {
+			'server.socket_port': 8081
+		},
 		'/': {
 			'tools.staticdir.root': os.path.abspath(os.getcwd())
 		},
