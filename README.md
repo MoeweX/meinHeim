@@ -6,6 +6,7 @@
 
 #Grundsätze:
 Programmierung so einfach/wenig verstrickt wie möglich -> lieber ein paar unnötige Komfortfeatures weg lassen
+Kein automatisches updaten der Seite mittels AJAX (nach dem initialem Laden) -> what you see is what you get
 
 Jedes Objekt ist wie folgt implementiert:
 	meinHeim.py: 
