@@ -8,17 +8,22 @@ import datetime
 from threading import Thread
 
 import cherrypy
+
+##########################################################################################
+#Global Variables
+##########################################################################################
+tinkerforgeConnection = None
+rules = None
+
+##########################################################################################
+#Custom Modules
+##########################################################################################
 from tinkerforge.ip_connection import IPConnection
 from tinkerforge.bricklet_remote_switch import BrickletRemoteSwitch
 from tinkerforge.bricklet_ambient_light import BrickletAmbientLight
 from tinkerforge.bricklet_distance_us import BrickletDistanceUS
-
-#global variables
-tinkerforgeConnection = None
-rules = None
-
-# Connection to the Brick Daemon on localhost and port 4223
 class TinkerforgeConnection(object):
+	# Connection to the Brick Daemon on localhost and port 4223
 
 	ipcon = None
 	current_entries = dict()
@@ -45,12 +50,20 @@ class TinkerforgeConnection(object):
 		rs.switch_socket_b(address, unit, state)
 		
 	def get_illuminance(self, uid):
-		al = BrickletAmbientLight(uid, self.ipcon)
-		return al.get_illuminance() / 10
+		try:
+			al = BrickletAmbientLight(uid, self.ipcon)
+			return al.get_illuminance() / 10
+		except Exception:
+			print(uid + " not connected")
+			return -1
 		
 	def get_distance(self, uid):
-		dus = BrickletDistanceUS(uid, self.ipcon)
-		return dus.get_distance_value()
+		try:
+			dus = BrickletDistanceUS(uid, self.ipcon)
+			return dus.get_distance_value()
+		except Exception:
+			print(uid + " not connected")
+			return -1
 
 	def __init__(self):
 		self.ipcon = IPConnection()
@@ -58,7 +71,66 @@ class TinkerforgeConnection(object):
 		self.ipcon.register_callback(IPConnection.CALLBACK_ENUMERATE, self.cb_enumerate)
 		self.ipcon.enumerate()
 
-# Collection of all Rules
+from bs4 import BeautifulSoup
+import requests
+class BVG(object):
+	
+	ACTUAL_API_ENDPOINT = 'http://mobil.bvg.de/Fahrinfo/bin/stboard.bin/dox?ld=0.1&rt=0&'
+	
+	def __init__(self, station, limit=5):
+		if isinstance(station, str):
+			self.station_enc = station.encode('iso-8859-1')
+		elif isinstance(station, bytes):
+			self.station_enc = station
+		else:
+			raise ValueError("Invalid type for station")
+		self.station = station
+		self.limit = limit
+
+	def call(self):
+		params = {
+			'input': self.station_enc,
+			'maxJourneys': self.limit,
+			'start': 'suchen',
+		}
+		response = requests.get(self.ACTUAL_API_ENDPOINT, params=params)
+		if response.ok:
+			soup = BeautifulSoup(response.text)
+			if soup.find_all('form'):
+				print("The station" + self.station + " does not exist.")
+				return None
+			else:
+				# The station seems to exist
+				result = soup.find('div', {'id': '',
+										   'class': 'ivu_result_box'})
+				if result is None:
+					return Response(True, self.station, [])
+				rows = result.find_all('tr')
+				departures = []
+				for row in rows:
+					if row.parent.name == 'tbody':
+						td = row.find_all('td')
+						if td:
+							dep = [self.station,
+									td[2].text.strip(),
+									td[0].text.strip(),
+									
+									td[1].text.strip()]
+							departures.append(dep)
+				return departures
+		else:
+			try:
+				response.raise_for_status()
+			except requests.RequestException as e:
+				print(e)
+			else:
+				print("An unknown error occured.")
+			return None
+		
+
+##########################################################################################
+#Collection of all Rules
+##########################################################################################
 class Rules(object):
 
 	# Automatic Watering
@@ -136,6 +208,9 @@ class Rules(object):
 		self.start_watering_rule()
 		self.start_desk_lamb_rule()
 
+##########################################################################################
+#The Webserver
+##########################################################################################
 class Webserver(object):
 
 	# Entrypoint
@@ -240,8 +315,7 @@ class Webserver(object):
 		if rules.desk_lamb_rule_keep_alive:
 			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_off\");'>Aktiv</a>"
 		else:
-			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_on\");'>Deaktiv</a>"
-		
+			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_on\");'>Deaktiv</a>"	
 		
 	# Additional Informationen
 	
@@ -261,13 +335,18 @@ class Webserver(object):
 	@cherrypy.expose
 	def information_iTm_distance(self):
 		return str(tinkerforgeConnection.get_distance("iTm"))
+		
+	@cherrypy.expose
+	def information_bvg(self):
+		return str(bvg.call())
 
 if __name__ == '__main__':
 	conf = {
 		'global': {
 			'server.socket_port': 8081,
 			'server.socket_host': '0.0.0.0',
-			'log.error_file': 'error.log'
+			'log.error_file': 'error.log',
+			'log.access_file': 'access.log'
 		},
 		'/': {
 			'tools.staticdir.root': os.path.abspath(os.getcwd())
@@ -279,6 +358,6 @@ if __name__ == '__main__':
 		}
 	}
 	tinkerforgeConnection = TinkerforgeConnection()
+	bvg = BVG("Seesener Str. (Berlin)")
 	rules = Rules()
-	# Remove HTTP Requests from Log
 	cherrypy.quickstart(Webserver(), '/', conf)
