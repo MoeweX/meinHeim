@@ -6,7 +6,11 @@
 
 #Grundsätze:
 Programmierung so einfach/wenig verstrickt wie möglich -> lieber ein paar unnötige Komfortfeatures weg lassen
+<<<<<<< HEAD
 Kein Zugemülle durch python packages -> alles in diesem Projekt enthalten
+=======
+Kein automatisches updaten der Seite mittels AJAX (nach dem initialem Laden) -> what you see is what you get
+>>>>>>> 2dd4fc8ddac36e228aa40ddfdc41959adafe5357
 
 Jedes Objekt ist wie folgt implementiert:
 	meinHeim.py: 
