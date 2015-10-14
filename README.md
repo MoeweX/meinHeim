@@ -6,6 +6,7 @@
 
 #Grundsätze:
 Programmierung so einfach/wenig verstrickt wie möglich -> lieber ein paar unnötige Komfortfeatures weg lassen
+Kein Zugemülle durch python packages -> alles in diesem Projekt enthalten
 
 Jedes Objekt ist wie folgt implementiert:
 	meinHeim.py: 
