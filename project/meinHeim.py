@@ -69,7 +69,7 @@ class Rules(object):
 	def watering_rule(self):
 		while self.watering_rule_keep_alive:
 			now = datetime.datetime.now()
-			if now.hour == 9 or now.hour == 19:
+			if (now.hour == 9 and now.minute == 0) or (now.hour == 19 and now.minute == 0):
 				cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
 				tinkerforgeConnection.switch_socket("nXN", 31, 1, 1)
 				time.sleep(60)
