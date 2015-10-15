@@ -1,3 +1,6 @@
+#Target Group
+People familiar with Python, HTML and Javascript who want their own lightweight, customized smart home system. The system here is highly adjusted to meet my needs, but they follow some easy paradigms so feel free to use them for your own home. If you create interesting modules I would be happy if you contribute them back to the project :).
+
 #Motivation
 
 Many home assistant and SmartHome systems exists. Two popular open-source examples are [openHab](https://github.com/openhab/openhab) and [home-assistant](https://github.com/balloob/home-assistant). These tools try to offer support for as many platforms as possible.
