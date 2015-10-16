@@ -64,7 +64,7 @@ from bs4 import BeautifulSoup
 import requests
 class BVG(object):
 	
-	ACTUAL_API_ENDPOINT = 'http://mobil.bvg.de/Fahrinfo/bin/stboard.bin/dox?ld=0.1&rt=0&'
+	ACTUAL_API_ENDPOINT = 'http://mobil.bvg.de/Fahrinfo/bin/stboard.bin/dox?&boardType=depRT'
 	
 	def __init__(self, station, limit=5):
 		if isinstance(station, str):
