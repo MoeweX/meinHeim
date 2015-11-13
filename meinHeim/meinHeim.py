@@ -170,44 +170,34 @@ class Webserver(object):
 	
 	@cherrypy.expose
 	def watering_rule_on(self):
-		rules.start_watering_rule()
+		rules.watering_rule.activate_rule()
 		return "Watering Rule activated"
 	
 	@cherrypy.expose
 	def watering_rule_off(self):
-		rules.watering_rule_keep_alive = False
-		return "Test Rule deactivated"
-		
-	@cherrypy.expose
-	def test_rule_on(self):
-		rules.test_rule.activate_rule()
-		return "Test Rule activated"
-	
-	@cherrypy.expose
-	def test_rule_off(self):
-		rules.test_rule.deactivate_rule()
+		rules.watering_rule.keep_alive = False
 		return "Test Rule deactivated"
 	
 	@cherrypy.expose
 	def watering_rule_status(self):
-		if rules.watering_rule_keep_alive:
+		if rules.watering_rule.keep_alive:
 			return "<a href='.' onclick='return $.ajax(\"../watering_rule_off\");'>Aktiv</a>"
 		else:
 			return "<a href='.' onclick='return $.ajax(\"../watering_rule_on\");'>Deaktiv</a>"
 	
 	@cherrypy.expose
 	def desk_lamb_rule_on(self):
-		rules.start_desk_lamb_rule()
+		rules.desklamp_rule.activate_rule()
 		return "Desk Lamb Rule activated"
 	
 	@cherrypy.expose
 	def desk_lamb_rule_off(self):
-		rules.desk_lamb_rule_keep_alive = False
+		rules.desklamp_rule.keep_alive = False
 		return "Desk Lamb Rule deactivated"
 	
 	@cherrypy.expose
 	def desk_lamb_rule_status(self):
-		if rules.desk_lamb_rule_keep_alive:
+		if rules.desklamp_rule.keep_alive:
 			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_off\");'>Aktiv</a>"
 		else:
 			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_on\");'>Deaktiv</a>"	
