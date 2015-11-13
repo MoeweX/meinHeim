@@ -6,6 +6,7 @@ import string
 import time
 import datetime
 from threading import Thread
+import abc
 
 import cherrypy
 
@@ -24,91 +25,84 @@ rules = None
 ##########################################################################################
 class Rules(object):
 
-	# Automatic Watering
+	class Generale_Rule():
+		__metaclass__ = abc.ABCMeta
+	
+		keep_alive = True
+		thread = None
+		tname = ""
 		
-	watering_rule_keep_alive = True
-	watering_rule_thread = None
-	
-	def watering_rule(self):
-		while self.watering_rule_keep_alive:
-			now = datetime.datetime.now()
-			if (now.hour == 9 and now.minute == 0) or (now.hour == 19 and now.minute == 0):
-				cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
-				tinkerforgeConnection.switch_socket("nXN", 31, 1, 1)
-				time.sleep(60)
-				cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", stoped watering.")
-				tinkerforgeConnection.switch_socket("nXN", 31, 1, 0)
-				
-			time.sleep(50)
-		cherrypy.log("Stopped Watering Rule")
-	
-	# Turn on Desk Lamp when Sitting at Table
-	
-	desk_lamb_rule_keep_alive = True
-	desk_lamb_rule_thread = None
+		def activate_rule(self):
+			self.keep_alive = True
+			if self.thread != None: # check whether not initialized
+				if self.thread.isAlive(): # check whether was still alive
+					cherrypy.log(self.tname + " was still alive!")
+					return
 		
-	def desk_lamb_rule(self):
-		send_on = False
-		while self.desk_lamb_rule_keep_alive:
-			if tinkerforgeConnection.get_distance("iTm") <= 1500 and tinkerforgeConnection.get_illuminance("amm") <= 30 and send_on == False:
-				tinkerforgeConnection.switch_socket("nXN", 30, 3, 1)
-				send_on = True
-			elif (tinkerforgeConnection.get_distance("iTm") > 1500 or tinkerforgeConnection.get_illuminance("amm") > 30) and send_on == True:
-				tinkerforgeConnection.switch_socket("nXN", 30, 3, 0)
-				send_on = False		
-			time.sleep(10)
-		cherrypy.log("Stopped Desk Lamb Rule")
+			# not initialized or dead, does not matter
+			cherrypy.log("Activated Rule " + self.tname + ".")
+			self.thread = Thread(name=self.tname, target=self.rule)
+			self.thread.setDaemon(True)
+			self.thread.start()
+			
+		def deactivate_rule(self):
+			cherrypy.log("Rule " + self.tname + "will not be kept alive.")
+			self.keep_alive = False
+			
+		@abc.abstractmethod
+		def rule(self):	
+			"This method is abstract"
+		
+		def __init__(self, tname):
+			self.tname = tname
+			
+	class Watering_Rule(Generale_Rule):	
+		def rule(self):
+			while self.keep_alive:
+				now = datetime.datetime.now()
+				if (now.hour == 9 and now.minute == 0) or (now.hour == 19 and now.minute == 0):
+					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
+					tinkerforgeConnection.switch_socket("nXN", 31, 1, 1)
+					time.sleep(60)
+					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", stoped watering.")
+					tinkerforgeConnection.switch_socket("nXN", 31, 1, 0)	
+				time.sleep(50)
+			cherrypy.log(self.tname + " was no longer kept alive.")
+			
+	class Desklamp_Rule(Generale_Rule):	
+		def rule(self):
+			send_on = False
+			while self.keep_alive:
+				if tinkerforgeConnection.get_distance("iTm") <= 1500 and tinkerforgeConnection.get_illuminance("amm") <= 30 and send_on == False:
+					tinkerforgeConnection.switch_socket("nXN", 30, 3, 1)
+					send_on = True
+				elif (tinkerforgeConnection.get_distance("iTm") > 1500 or tinkerforgeConnection.get_illuminance("amm") > 30) and send_on == True:
+					tinkerforgeConnection.switch_socket("nXN", 30, 3, 0)
+					send_on = False		
+				time.sleep(10)
+			cherrypy.log(self.tname + " was no longer kept alive.")
 	
-	# TODO Generalize start_rule method	
-	def start_watering_rule(self):
-		if self.watering_rule_thread == None: # check whether not initialized
-			cherrypy.log("Started Watering Rule")
-			self.watering_rule_thread = Thread(name="Watering Rule", target=self.watering_rule)
-			self.watering_rule_thread.setDaemon(True)
-			self.watering_rule_keep_alive = True
-			self.watering_rule_thread.start()
-		elif self.watering_rule_thread.isAlive(): # check whether still alive
-			cherrypy.log("Watering Rule was still Alive")
-			self.watering_rule_keep_alive = True
-		else: # initialized but dead
-			cherrypy.log("Started Watering Rule")
-			self.watering_rule_thread = Thread(name="Watering Rule", target=self.watering_rule)
-			self.watering_rule_thread.setDaemon(True)
-			self.watering_rule_keep_alive = True
-			self.watering_rule_thread.start()
-			
-	def start_desk_lamb_rule(self):
-		if self.desk_lamb_rule_thread == None: # check whether not initialized
-			cherrypy.log("Started Desk Lamp Rule")
-			self.desk_lamb_rule_thread = Thread(name="Desk Lamp Rule", target=self.desk_lamb_rule)
-			self.desk_lamb_rule_thread.setDaemon(True)
-			self.desk_lamb_rule_keep_alive = True
-			self.desk_lamb_rule_thread.start()
-		elif self.desk_lamb_rule_thread.isAlive(): # check whether still alive
-			cherrypy.log("Desk Lamp was still Alive")
-			self.desk_lamb_rule_keep_alive = True
-		else: # initialized but dead
-			cherrypy.log("Started Desk Lamp Rule")
-			self.desk_lamb_rule_thread = Thread(name="Desk Lamp Rule", target=self.desk_lamb_rule)
-			self.desk_lamb_rule_thread.setDaemon(True)
-			self.desk_lamb_rule_keep_alive = True
-			self.desk_lamb_rule_thread.start()
-			
+	# define public variables for all rules here
+	watering_rule = None	
+	desklamp_rule = None
 			
 	def __init__(self):
-		self.start_watering_rule()
-		self.start_desk_lamb_rule()
-
+		self.watering_rule = Rules.Watering_Rule("Watering Rule")
+		self.watering_rule.activate_rule()
+		self.desklamp_rule = Rules.Desklamp_Rule("Desklamp Rule")
+		self.desklamp_rule.activate_rule()
+		
 ##########################################################################################
 #The Webserver
 ##########################################################################################
 class Webserver(object):
 
 	# Entrypoint
-
-	@cherrypy.expose
-	def index(self):
-		raise cherrypy.HTTPRedirect("/static")
+	
+	class Entrypoint:
+		@cherrypy.expose
+		def index(self):
+			raise cherrypy.HTTPRedirect("/static")
 
 	# Buttons switch_socket
 
@@ -182,7 +176,17 @@ class Webserver(object):
 	@cherrypy.expose
 	def watering_rule_off(self):
 		rules.watering_rule_keep_alive = False
-		return "Watering Rule deactivated"
+		return "Test Rule deactivated"
+		
+	@cherrypy.expose
+	def test_rule_on(self):
+		rules.test_rule.activate_rule()
+		return "Test Rule activated"
+	
+	@cherrypy.expose
+	def test_rule_off(self):
+		rules.test_rule.deactivate_rule()
+		return "Test Rule deactivated"
 	
 	@cherrypy.expose
 	def watering_rule_status(self):

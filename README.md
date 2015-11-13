@@ -37,6 +37,8 @@ In the later chapters I will go into more detail what these files are for and ho
 * Zusätzliche Informationen (wie die angeschlossenen Geräte) werden hier schon vorformatiert
 * Regeln in einer eigenen Klasse definiert (todo)
 
+	Fehler bei Regeln: TypeError: Can't instantiate abstract class Test_Rule with abstract methods rule
+
 ##modules.py
 
 ##website/index.html
