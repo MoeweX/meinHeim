@@ -34,6 +34,10 @@ class TinkerforgeConnection(object):
 		rs = BrickletRemoteSwitch(uid, self.ipcon)
 		rs.switch_socket_b(address, unit, state)
 		
+	def dimm_socket(self, uid, address, unit, value):
+		rs = BrickletRemoteSwitch(uid, self.ipcon)
+		rs.dim_socket_b(address, unit, value)
+		
 	def get_illuminance(self, uid):
 		try:
 			al = BrickletAmbientLight(uid, self.ipcon)

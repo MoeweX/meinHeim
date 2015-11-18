@@ -166,6 +166,29 @@ class Webserver(object):
 		tinkerforgeConnection.switch_socket("nXN", 31, 2, 0)
 		return "Deaktiviere 31_2"
 	
+	## Dimm
+	
+	value_25_1 = 10
+	
+	@cherrypy.expose
+	def button_nXN_25_1_increase(self):
+		if self.value_25_1 < 15:
+			self.value_25_1 = self.value_25_1 + 1
+			tinkerforgeConnection.dimm_socket("nXN", 25, 1, self.value_25_1)
+			return "Neuer Dimmwert 25_1 = " + str(self.value_25_1)
+		return "Dimmwert war schon bei 15"
+			
+	def button_nXN_25_1_decrease(self):
+		if self.value_25_1 > 0:
+			self.value_25_1 = self.value_25_1 - 1
+			tinkerforgeConnection.dimm_socket("nXN", 25, 1, self.value_25_1)
+			return "Neuer Dimmwert 25_1 = " + str(self.value_25_1)
+		return "Dimmwert war schon bei 0"
+			
+	def button_nXN_25_1_off(self):
+		tinkerforgeConnection.switch_socket("nXN", 25, 1, 0)
+		return "Deaktiviere 25_0"	
+	
 	# Rules
 	
 	@cherrypy.expose
