@@ -99,9 +99,8 @@ class Webserver(object):
 
 	# Entrypoint
 	
-	class Entrypoint:
-		@cherrypy.expose
-		def index(self):
+	@cherrypy.expose
+	def index(self):
 			raise cherrypy.HTTPRedirect("/static")
 
 	# Buttons switch_socket
