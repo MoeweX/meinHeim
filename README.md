@@ -33,11 +33,19 @@ In the later chapters I will go into more detail what these files are for and ho
 
 ##meinHeim.py
 
-* Bereitstellung einer URL für JEDE Funktion eines Objektes
-* Zusätzliche Informationen (wie die angeschlossenen Geräte) werden hier schon vorformatiert
-* Regeln in einer eigenen Klasse definiert (todo)
+This is the main file of the project. It should be adjusted to ones needs. I created subsections for different functionalities, which I will explain now:
 
-	Fehler bei Regeln: TypeError: Can't instantiate abstract class Test_Rule with abstract methods rule
+### Global variables
+Here, a variable for all kinds of modules imported from the modules.py file (see below) needs to be created. By doing so, one can easily access them later. In addition, a variable for the nested Rule class needs is created so that the rules can be accessed, too.
+
+### Collection of all rules
+Here, I define the rules I use to automate certain features such as enabling the light on my balcony in the evening, etc. I highly recommend to just extend the GeneraleRule class, because it offers an easy way to create new rules which can be turned on/off on desire. At the end of this section, I create variables for each rule so that they can be accessed and instatiante them in the constructor.
+
+### Webserver
+This class is used to configure the incorporated CherryPy webserver, which allows one to control the project via a webpage over the smartphone or computer. I decided to create subsection for all kinds of functionalities such as sockets, dimmer or information I want to provide on the webpage. I found out that it simplifies everything if I answer some requests (especially the ones which want to get information about the rule status or connected devices) with HTML elements, so that I don't need to create them later with JavaScript. 
+
+### The entrypoint of the application
+In the entrypoint, I start all imported modules, setup the webserver (and tell him where he finds the static files) and load the rules.
 
 ##modules.py
 
