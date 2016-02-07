@@ -43,7 +43,7 @@ In the later chapters I will go into more detail what these files are for and ho
 
 ##website/index.html
 
-If the project gets more complex and more html pages are needed, 
+If the project gets more complex, more html pages are needed, 
 
 * ein Panel für jedes Objekt, JEDE Aktion wird über einen eigenen Button in diesem Panel aktiviert, identifiziert durch ein val Attribut
 

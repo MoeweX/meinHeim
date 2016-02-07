@@ -2,9 +2,16 @@ $(document).ready(function() {
 	
 	//Button pressed
 	$(".button").click(function(e) {
+		console.log("Button clicked");
+		//TODO Dimmer
 		$.ajax({
 			type: "GET",
-			url: "/button_"+$(this).attr("val"),
+			url: "/socket/nXN",
+			data:{
+				address: $(this).attr("address"), 
+				unit: $(this).attr("unit"), 
+				state: $(this).attr("state")
+			}
 		})
 		.done(function(string) {
 			console.log(string);

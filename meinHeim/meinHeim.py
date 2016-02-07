@@ -16,7 +16,7 @@ from modules import BVG
 ##########################################################################################
 #Global Variables
 ##########################################################################################
-tinkerforgeConnection = None
+tinkerforge_connection = None
 bvg = None
 rules = None
 
@@ -62,10 +62,10 @@ class Rules(object):
 				now = datetime.datetime.now()
 				if (now.hour == 9 and now.minute == 0) or (now.hour == 19 and now.minute == 0):
 					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
-					tinkerforgeConnection.switch_socket("nXN", 31, 1, 1)
+					tinkerforge_connection.switch_socket("nXN", 31, 1, 1)
 					time.sleep(60)
 					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", stoped watering.")
-					tinkerforgeConnection.switch_socket("nXN", 31, 1, 0)	
+					tinkerforge_connection.switch_socket("nXN", 31, 1, 0)	
 				time.sleep(50)
 			cherrypy.log(self.tname + " was no longer kept alive.")
 			
@@ -73,16 +73,16 @@ class Rules(object):
 		def rule(self):
 			send_on = False
 			while self.keep_alive:
-				if tinkerforgeConnection.get_distance("iTm") <= 1500 and tinkerforgeConnection.get_illuminance("amm") <= 30 and send_on == False:
-					tinkerforgeConnection.switch_socket("nXN", 30, 3, 1)
+				if tinkerforge_connection.get_distance("iTm") <= 1500 and tinkerforge_connection.get_illuminance("amm") <= 30 and send_on == False:
+					tinkerforge_connection.switch_socket("nXN", 30, 3, 1)
 					send_on = True
-				elif (tinkerforgeConnection.get_distance("iTm") > 1500 or tinkerforgeConnection.get_illuminance("amm") > 30) and send_on == True:
-					tinkerforgeConnection.switch_socket("nXN", 30, 3, 0)
+				elif (tinkerforge_connection.get_distance("iTm") > 1500 or tinkerforge_connection.get_illuminance("amm") > 30) and send_on == True:
+					tinkerforge_connection.switch_socket("nXN", 30, 3, 0)
 					send_on = False		
 				time.sleep(10)
 			cherrypy.log(self.tname + " was no longer kept alive.")
 	
-	# define public variables for all rules here
+	# define public variables for all rules
 	watering_rule = None	
 	desklamp_rule = None
 			
@@ -97,165 +97,128 @@ class Rules(object):
 ##########################################################################################
 class Webserver(object):
 
-	# Entrypoint
-	
+	# initialize subclasses
+	def __init__(self):
+		self.socket = self.Socket()
+		self.dimmer = self.Dimmer()
+		self.rule = self.Rule()
+		self.additional_information = self.AdditionalInformation()
+
+	# entrypoint to webpage
 	@cherrypy.expose
 	def index(self):
 			raise cherrypy.HTTPRedirect("/static")
 
-	# Buttons switch_socket
+	# buttons to switch normal sockets	
+	class Socket():
+	
+		@cherrypy.expose
+		def nXN(self, address=-1, unit=-1, state=-1):
+			if (address == -1 or unit == -1 or state == -1):
+				return ("Invalid information: " + str(address) 
+					+ ", " + str(unit) + ", " + str(state))	
+			tinkerforge_connection.switch_socket(
+				"nXN", 
+				int(address), 
+				int(unit), 
+				int(state))
+			return "Tried to switch socket"
+	
+	# buttons that control dimmer
+	class Dimmer():
+		value_25_1 = 10
+	
+		@cherrypy.expose
+		def button_nXN_25_1_increase(self):
+			if self.value_25_1 < 15:
+				self.value_25_1 = self.value_25_1 + 1
+				tinkerforge_connection.dimm_socket("nXN", 25, 1, self.value_25_1)
+				return "Neuer Dimmwert 25_1 = " + str(self.value_25_1)
+			return "Dimmwert war schon bei 15"
+	
+		@cherrypy.expose
+		def button_nXN_25_1_decrease(self):
+			if self.value_25_1 > 0:
+				self.value_25_1 = self.value_25_1 - 1
+				tinkerforge_connection.dimm_socket("nXN", 25, 1, self.value_25_1)
+				return "Neuer Dimmwert 25_1 = " + str(self.value_25_1)
+			return "Dimmwert war schon bei 0"
+	
+		@cherrypy.expose
+		def button_nXN_25_1_off(self):
+			tinkerforge_connection.switch_socket("nXN", 25, 1, 0)
+			return "Deaktiviere 25_0"	
+	
+	# buttons that control the rules
+	class Rule():
+		@cherrypy.expose
+		def watering_rule_on(self):
+			rules.watering_rule.activate_rule()
+			return "Watering Rule activated"
+	
+		@cherrypy.expose
+		def watering_rule_off(self):
+			rules.watering_rule.keep_alive = False
+			return "Test Rule deactivated"
+	
+		@cherrypy.expose
+		def watering_rule_status(self):
+			if rules.watering_rule.keep_alive:
+				return "<a href='.' onclick='return $.ajax(\"../watering_rule_off\");'>Aktiv</a>"
+			else:
+				return "<a href='.' onclick='return $.ajax(\"../watering_rule_on\");'>Deaktiv</a>"
+	
+		@cherrypy.expose
+		def desk_lamb_rule_on(self):
+			rules.desklamp_rule.activate_rule()
+			return "Desk Lamb Rule activated"
+	
+		@cherrypy.expose
+		def desk_lamb_rule_off(self):
+			rules.desklamp_rule.keep_alive = False
+			return "Desk Lamb Rule deactivated"
+	
+		@cherrypy.expose
+		def desk_lamb_rule_status(self):
+			if rules.desklamp_rule.keep_alive:
+				return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_off\");'>Aktiv</a>"
+			else:
+				return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_on\");'>Deaktiv</a>"	
+		
+	# queries that provide additional informationen
+	class AdditionalInformation():
+		@cherrypy.expose
+		def information_connected_devices(self):
+			if len(tinkerforge_connection.current_entries) == 0:
+				return "<li>Keine Geräte angeschlossen</li>"
+			string = ""
+			for key in tinkerforge_connection.current_entries:
+				string += "<li>"+key+" ("+tinkerforge_connection.current_entries[key]+")</li>"
+			return string
+	
+		@cherrypy.expose
+		def information_amm_illuminance(self):
+			return str(tinkerforge_connection.get_illuminance("amm"))
+		
+		@cherrypy.expose
+		def information_iTm_distance(self):
+			return str(tinkerforge_connection.get_distance("iTm"))
+		
+		@cherrypy.expose
+		def information_bvg(self):
+			array = bvg.call()
+			if array == None:
+				return "<li>Keine Abfahrtzeiten verfügbar</li>"
+			string = ""
+			for entry in array:
+				string += "<li>"+entry[3] + " -> " + entry[1]+ " (" + entry[2] + ")</li>"
+			return string
 
-	@cherrypy.expose
-	def button_nXN_29_1_on(self):
-		tinkerforgeConnection.switch_socket("nXN", 29, 1, 1)
-		return "Aktiviere 29_1"
-		
-	@cherrypy.expose
-	def button_nXN_29_1_off(self):
-		tinkerforgeConnection.switch_socket("nXN", 29, 1, 0)
-		return "Deaktiviere 29_1"
-
-	@cherrypy.expose
-	def button_nXN_30_1_on(self):
-		tinkerforgeConnection.switch_socket("nXN", 30, 1, 1)
-		return "Aktiviere 30_1"
-		
-	@cherrypy.expose
-	def button_nXN_30_1_off(self):
-		tinkerforgeConnection.switch_socket("nXN", 30, 1, 0)
-		return "Deaktiviere 30_1"
-		
-	@cherrypy.expose
-	def button_nXN_30_2_on(self):
-		tinkerforgeConnection.switch_socket("nXN", 30, 2, 1)
-		return "Aktiviere 30_2"
-		
-	@cherrypy.expose
-	def button_nXN_30_2_off(self):
-		tinkerforgeConnection.switch_socket("nXN", 30, 2, 0)
-		return "Deaktiviere 30_2"
-		
-	@cherrypy.expose
-	def button_nXN_30_3_on(self):
-		tinkerforgeConnection.switch_socket("nXN", 30, 3, 1)
-		return "Aktiviere 30_3"
-		
-	@cherrypy.expose
-	def button_nXN_30_3_off(self):
-		tinkerforgeConnection.switch_socket("nXN", 30, 3, 0)
-		return "Deaktiviere 30_3"
-		
-	@cherrypy.expose
-	def button_nXN_31_1_on(self):
-		tinkerforgeConnection.switch_socket("nXN", 31, 1, 1)
-		return "Aktiviere 31_1"
-		
-	@cherrypy.expose
-	def button_nXN_31_1_off(self):
-		tinkerforgeConnection.switch_socket("nXN", 31, 1, 0)
-		return "Deaktiviere 31_1"
-		
-	@cherrypy.expose
-	def button_nXN_31_2_on(self):
-		tinkerforgeConnection.switch_socket("nXN", 31, 2, 1)
-		return "Aktiviere 31_2"
-		
-	@cherrypy.expose
-	def button_nXN_31_2_off(self):
-		tinkerforgeConnection.switch_socket("nXN", 31, 2, 0)
-		return "Deaktiviere 31_2"
-	
-	## Dimm
-	
-	value_25_1 = 10
-	
-	@cherrypy.expose
-	def button_nXN_25_1_increase(self):
-		if self.value_25_1 < 15:
-			self.value_25_1 = self.value_25_1 + 1
-			tinkerforgeConnection.dimm_socket("nXN", 25, 1, self.value_25_1)
-			return "Neuer Dimmwert 25_1 = " + str(self.value_25_1)
-		return "Dimmwert war schon bei 15"
-	
-	@cherrypy.expose
-	def button_nXN_25_1_decrease(self):
-		if self.value_25_1 > 0:
-			self.value_25_1 = self.value_25_1 - 1
-			tinkerforgeConnection.dimm_socket("nXN", 25, 1, self.value_25_1)
-			return "Neuer Dimmwert 25_1 = " + str(self.value_25_1)
-		return "Dimmwert war schon bei 0"
-	
-	@cherrypy.expose
-	def button_nXN_25_1_off(self):
-		tinkerforgeConnection.switch_socket("nXN", 25, 1, 0)
-		return "Deaktiviere 25_0"	
-	
-	# Rules
-	
-	@cherrypy.expose
-	def watering_rule_on(self):
-		rules.watering_rule.activate_rule()
-		return "Watering Rule activated"
-	
-	@cherrypy.expose
-	def watering_rule_off(self):
-		rules.watering_rule.keep_alive = False
-		return "Test Rule deactivated"
-	
-	@cherrypy.expose
-	def watering_rule_status(self):
-		if rules.watering_rule.keep_alive:
-			return "<a href='.' onclick='return $.ajax(\"../watering_rule_off\");'>Aktiv</a>"
-		else:
-			return "<a href='.' onclick='return $.ajax(\"../watering_rule_on\");'>Deaktiv</a>"
-	
-	@cherrypy.expose
-	def desk_lamb_rule_on(self):
-		rules.desklamp_rule.activate_rule()
-		return "Desk Lamb Rule activated"
-	
-	@cherrypy.expose
-	def desk_lamb_rule_off(self):
-		rules.desklamp_rule.keep_alive = False
-		return "Desk Lamb Rule deactivated"
-	
-	@cherrypy.expose
-	def desk_lamb_rule_status(self):
-		if rules.desklamp_rule.keep_alive:
-			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_off\");'>Aktiv</a>"
-		else:
-			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_on\");'>Deaktiv</a>"	
-		
-	# Additional Informationen
-	
-	@cherrypy.expose
-	def information_connected_devices(self):
-		if len(tinkerforgeConnection.current_entries) == 0:
-			return "<li>Keine Geräte angeschlossen</li>"
-		string = ""
-		for key in tinkerforgeConnection.current_entries:
-			string += "<li>"+key+" ("+tinkerforgeConnection.current_entries[key]+")</li>"
-		return string
-	
-	@cherrypy.expose
-	def information_amm_illuminance(self):
-		return str(tinkerforgeConnection.get_illuminance("amm"))
-		
-	@cherrypy.expose
-	def information_iTm_distance(self):
-		return str(tinkerforgeConnection.get_distance("iTm"))
-		
-	@cherrypy.expose
-	def information_bvg(self):
-		array = bvg.call()
-		if array == None:
-			return "<li>Keine Abfahrtzeiten verfügbar</li>"
-		string = ""
-		for entry in array:
-			string += "<li>"+entry[3] + " -> " + entry[1]+ " (" + entry[2] + ")</li>"
-		return string
-
+##########################################################################################
+#The Entrypoint of the Application
+##########################################################################################
 if __name__ == '__main__':
+	# the configuration for the webserver
 	conf = {
 		'global': {
 			'server.socket_port': 8081,
@@ -271,7 +234,17 @@ if __name__ == '__main__':
 			'tools.staticdir.index': 'index.html'
 		}
 	}
-	tinkerforgeConnection = TinkerforgeConnection()
+	
+	# start all needed modules
+	tinkerforge_connection = TinkerforgeConnection()
 	bvg = BVG("Seesener Str. (Berlin)", limit=4)
+	
+	# load the rules
 	rules = Rules()
+	
+	# start the webserver
+	cherrypy.tree.mount(Webserver().socket, '/socket')
+	cherrypy.tree.mount(Webserver().dimmer, '/dimmer')
+	cherrypy.tree.mount(Webserver().rule, '/rule')
+	cherrypy.tree.mount(Webserver().additional_information, '/additional_information')
 	cherrypy.quickstart(Webserver(), '/', conf)
