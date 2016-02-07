@@ -28,7 +28,7 @@ class Rules(object):
 	class Generale_Rule():
 		__metaclass__ = abc.ABCMeta
 	
-		keep_alive = True
+		keep_alive = False
 		thread = None
 		tname = ""
 		
@@ -103,11 +103,8 @@ class Rules(object):
 			
 	def __init__(self):
 		self.watering_rule = Rules.Watering_Rule("Watering Rule")
-		self.watering_rule.activate_rule()
 		self.balkon_rule = Rules.Balkon_Rule("Balkon Rule")
-		self.balkon_rule.activate_rule()
 		self.desklamp_rule = Rules.Desklamp_Rule("Desklamp Rule")
-		self.desklamp_rule.activate_rule()
 		
 ##########################################################################################
 #The Webserver
@@ -126,7 +123,7 @@ class Webserver(object):
 	def index(self):
 			raise cherrypy.HTTPRedirect("/static")
 
-	# buttons to switch normal sockets	
+	# buttons to switch normal sockets + shutdown dimmer
 	class Socket():
 	
 		@cherrypy.expose
@@ -143,6 +140,7 @@ class Webserver(object):
 	
 	# buttons that control dimmer
 	class Dimmer():
+		# TODO does not work yet
 		value_25_1 = 10
 	
 		@cherrypy.expose
@@ -179,6 +177,13 @@ class Webserver(object):
 			return "Test Rule deactivated"
 			
 		@cherrypy.expose
+		def watering_rule_status(self):
+			if rules.watering_rule.keep_alive:
+				return "<a href='.' onclick='return $.ajax(\"/rule/watering_rule_off\");'>Aktiv</a>"
+			else:
+				return "<a href='.' onclick='return $.ajax(\"/rule/watering_rule_on\");'>Deaktiv</a>"
+			
+		@cherrypy.expose
 		def balkon_rule_on(self):
 			rules.desklamp_rule.activate_rule()
 			return "Balkon Rule activated"
@@ -191,16 +196,9 @@ class Webserver(object):
 		@cherrypy.expose
 		def balkon_rule_status(self):
 			if rules.balkon_rule.keep_alive:
-				return "<a href='.' onclick='return $.ajax(\"../balkon_rule_off\");'>Aktiv</a>"
+				return "<a href='.' onclick='return $.ajax(\"/rule/balkon_rule_off\");'>Aktiv</a>"
 			else:
-				return "<a href='.' onclick='return $.ajax(\"../balkon_rule_on\");'>Deaktiv</a>"
-	
-		@cherrypy.expose
-		def watering_rule_status(self):
-			if rules.watering_rule.keep_alive:
-				return "<a href='.' onclick='return $.ajax(\"../watering_rule_off\");'>Aktiv</a>"
-			else:
-				return "<a href='.' onclick='return $.ajax(\"../watering_rule_on\");'>Deaktiv</a>"
+				return "<a href='.' onclick='return $.ajax(\"/rule/balkon_rule_on\");'>Deaktiv</a>"
 	
 		@cherrypy.expose
 		def desk_lamb_rule_on(self):
@@ -215,14 +213,14 @@ class Webserver(object):
 		@cherrypy.expose
 		def desk_lamb_rule_status(self):
 			if rules.desklamp_rule.keep_alive:
-				return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_off\");'>Aktiv</a>"
+				return "<a href='.' onclick='return $.ajax(\"/rule/desk_lamb_rule_off\");'>Aktiv</a>"
 			else:
-				return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_on\");'>Deaktiv</a>"	
+				return "<a href='.' onclick='return $.ajax(\"/rule/desk_lamb_rule_on\");'>Deaktiv</a>"	
 		
 	# queries that provide additional informationen
 	class AdditionalInformation():
 		@cherrypy.expose
-		def information_connected_devices(self):
+		def connected_devices(self):
 			if len(tinkerforge_connection.current_entries) == 0:
 				return "<li>Keine Geräte angeschlossen</li>"
 			string = ""
@@ -231,15 +229,15 @@ class Webserver(object):
 			return string
 	
 		@cherrypy.expose
-		def information_amm_illuminance(self):
+		def amm_illuminance(self):
 			return str(tinkerforge_connection.get_illuminance("amm"))
 		
 		@cherrypy.expose
-		def information_iTm_distance(self):
+		def iTm_distance(self):
 			return str(tinkerforge_connection.get_distance("iTm"))
 		
 		@cherrypy.expose
-		def information_bvg(self):
+		def bvg(self):
 			array = bvg.call()
 			if array == None:
 				return "<li>Keine Abfahrtzeiten verfügbar</li>"
@@ -257,7 +255,8 @@ if __name__ == '__main__':
 		'global': {
 			'server.socket_port': 8081,
 			'server.socket_host': '0.0.0.0',
-			'log.error_file': 'error.log'
+			'log.error_file': 'error.log',
+			'log.access_file': 'access.log'
 		},
 		'/': {
 			'tools.staticdir.root': os.path.abspath(os.getcwd())
