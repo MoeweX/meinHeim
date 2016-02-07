@@ -64,8 +64,21 @@ class Rules(object):
 					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
 					tinkerforgeConnection.switch_socket("nXN", 31, 1, 1)
 					time.sleep(60)
-					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", stoped watering.")
+					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", stopped watering.")
 					tinkerforgeConnection.switch_socket("nXN", 31, 1, 0)	
+				time.sleep(50)
+			cherrypy.log(self.tname + " was no longer kept alive.")
+			
+	class Balkon_Rule(Generale_Rule):	
+		def rule(self):
+			while self.keep_alive:
+				now = datetime.datetime.now()
+				if (now.hour == 17 and now.minute == 0):
+					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", activated Balkonbeleuchtung.")
+					tinkerforgeConnection.switch_socket("nXN", 50, 1, 1)	
+				if (now.hour == 22 and now.minute == 0):
+					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", deactivated Balkonbeleuchtung.")
+					tinkerforgeConnection.switch_socket("nXN", 50, 1, 0)
 				time.sleep(50)
 			cherrypy.log(self.tname + " was no longer kept alive.")
 			
@@ -83,12 +96,15 @@ class Rules(object):
 			cherrypy.log(self.tname + " was no longer kept alive.")
 	
 	# define public variables for all rules here
-	watering_rule = None	
+	watering_rule = None
+	balkon_rule = None
 	desklamp_rule = None
 			
 	def __init__(self):
 		self.watering_rule = Rules.Watering_Rule("Watering Rule")
 		self.watering_rule.activate_rule()
+		self.balkon_rule = Rules.Balkon_Rule("Balkon Rule")
+		self.balkon_rule.activate_rule()
 		self.desklamp_rule = Rules.Desklamp_Rule("Desklamp Rule")
 		self.desklamp_rule.activate_rule()
 		
@@ -97,15 +113,20 @@ class Rules(object):
 ##########################################################################################
 class Webserver(object):
 
+	######################################################################################
 	# Entrypoint
+	######################################################################################
 	
 	class Entrypoint:
 		@cherrypy.expose
 		def index(self):
 			raise cherrypy.HTTPRedirect("/static")
 
+	######################################################################################
 	# Buttons switch_socket
+	######################################################################################
 
+	# Girlande Wohnzimmer
 	@cherrypy.expose
 	def button_nXN_29_1_on(self):
 		tinkerforgeConnection.switch_socket("nXN", 29, 1, 1)
@@ -115,17 +136,19 @@ class Webserver(object):
 	def button_nXN_29_1_off(self):
 		tinkerforgeConnection.switch_socket("nXN", 29, 1, 0)
 		return "Deaktiviere 29_1"
-
+	
+	# Girlande Küche	
 	@cherrypy.expose
-	def button_nXN_30_1_on(self):
-		tinkerforgeConnection.switch_socket("nXN", 30, 1, 1)
-		return "Aktiviere 30_1"
+	def button_nXN_29_2_on(self):
+		tinkerforgeConnection.switch_socket("nXN", 29, 2, 1)
+		return "Aktiviere 29_2"
 		
 	@cherrypy.expose
-	def button_nXN_30_1_off(self):
-		tinkerforgeConnection.switch_socket("nXN", 30, 1, 0)
-		return "Deaktiviere 30_1"
-		
+	def button_nXN_29_2_off(self):
+		tinkerforgeConnection.switch_socket("nXN", 29, 2, 0)
+		return "Deaktiviere 29_2"
+	
+	# Hintergrundlicht Weiß	
 	@cherrypy.expose
 	def button_nXN_30_2_on(self):
 		tinkerforgeConnection.switch_socket("nXN", 30, 2, 1)
@@ -135,7 +158,8 @@ class Webserver(object):
 	def button_nXN_30_2_off(self):
 		tinkerforgeConnection.switch_socket("nXN", 30, 2, 0)
 		return "Deaktiviere 30_2"
-		
+	
+	# Schreibtischlampe	
 	@cherrypy.expose
 	def button_nXN_30_3_on(self):
 		tinkerforgeConnection.switch_socket("nXN", 30, 3, 1)
@@ -145,7 +169,8 @@ class Webserver(object):
 	def button_nXN_30_3_off(self):
 		tinkerforgeConnection.switch_socket("nXN", 30, 3, 0)
 		return "Deaktiviere 30_3"
-		
+	
+	# WLAN	
 	@cherrypy.expose
 	def button_nXN_31_1_on(self):
 		tinkerforgeConnection.switch_socket("nXN", 31, 1, 1)
@@ -155,7 +180,8 @@ class Webserver(object):
 	def button_nXN_31_1_off(self):
 		tinkerforgeConnection.switch_socket("nXN", 31, 1, 0)
 		return "Deaktiviere 31_1"
-		
+	
+	# Laterne	
 	@cherrypy.expose
 	def button_nXN_31_2_on(self):
 		tinkerforgeConnection.switch_socket("nXN", 31, 2, 1)
@@ -165,9 +191,23 @@ class Webserver(object):
 	def button_nXN_31_2_off(self):
 		tinkerforgeConnection.switch_socket("nXN", 31, 2, 0)
 		return "Deaktiviere 31_2"
+		
+	# Balkonbeleuchtung	
+	@cherrypy.expose
+	def button_nXN_50_1_on(self):
+		tinkerforgeConnection.switch_socket("nXN", 50, 1, 1)
+		return "Aktiviere 31_2"
+		
+	@cherrypy.expose
+	def button_nXN_50_1_off(self):
+		tinkerforgeConnection.switch_socket("nXN", 50, 1, 0)
+		return "Deaktiviere 31_2"
 	
-	## Dimm
+	######################################################################################
+	# Dimm
+	######################################################################################
 	
+	# Nachtlicht
 	value_25_1 = 10
 	
 	@cherrypy.expose
@@ -189,15 +229,17 @@ class Webserver(object):
 	@cherrypy.expose
 	def button_nXN_25_1_off(self):
 		tinkerforgeConnection.switch_socket("nXN", 25, 1, 0)
-		return "Deaktiviere 25_0"	
-	
+		return "Deaktiviere 25_0"
+		
+	######################################################################################
 	# Rules
+	######################################################################################
 	
 	@cherrypy.expose
 	def watering_rule_on(self):
 		rules.watering_rule.activate_rule()
 		return "Watering Rule activated"
-	
+
 	@cherrypy.expose
 	def watering_rule_off(self):
 		rules.watering_rule.keep_alive = False
@@ -209,6 +251,23 @@ class Webserver(object):
 			return "<a href='.' onclick='return $.ajax(\"../watering_rule_off\");'>Aktiv</a>"
 		else:
 			return "<a href='.' onclick='return $.ajax(\"../watering_rule_on\");'>Deaktiv</a>"
+			
+	@cherrypy.expose
+	def balkon_rule_on(self):
+		rules.desklamp_rule.activate_rule()
+		return "Balkon Rule activated"
+	
+	@cherrypy.expose
+	def balkon_rule_off(self):
+		rules.desklamp_rule.keep_alive = False
+		return "Balkon Rule deactivated"
+	
+	@cherrypy.expose
+	def balkon_rule_status(self):
+		if rules.balkon_rule.keep_alive:
+			return "<a href='.' onclick='return $.ajax(\"../balkon_rule_off\");'>Aktiv</a>"
+		else:
+			return "<a href='.' onclick='return $.ajax(\"../balkon_rule_on\");'>Deaktiv</a>"
 	
 	@cherrypy.expose
 	def desk_lamb_rule_on(self):
@@ -226,8 +285,10 @@ class Webserver(object):
 			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_off\");'>Aktiv</a>"
 		else:
 			return "<a href='.' onclick='return $.ajax(\"../desk_lamb_rule_on\");'>Deaktiv</a>"	
-		
+	
+	######################################################################################	
 	# Additional Informationen
+	######################################################################################
 	
 	@cherrypy.expose
 	def information_connected_devices(self):

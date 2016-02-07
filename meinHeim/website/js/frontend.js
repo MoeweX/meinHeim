@@ -38,6 +38,15 @@ $(document).ready(function() {
 		$("#watering_rule_status").replaceWith('<li id="watering_rule_status">Bewässerungsregel (9 + 19 Uhr): ' + string + '</li>');
 	});
 	
+	//Load status of balkon rule
+	$.ajax({
+		type: "GET",
+		url: "/balkon_rule_status",
+	})
+	.done(function(string) {
+		$("#balkon_rule_status").replaceWith('<li id="balkon_rule_status">Balkonbeleuchtungsregel (17 - 22 Uhr): ' + string + '</li>');
+	});
+	
 	//Load status of desk lamp rule
 	$.ajax({
 		type: "GET",
