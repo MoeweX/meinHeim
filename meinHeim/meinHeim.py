@@ -185,12 +185,12 @@ class Webserver(object):
 			
 		@cherrypy.expose
 		def balkon_rule_on(self):
-			rules.desklamp_rule.activate_rule()
+			rules.balkon_rule.activate_rule()
 			return "Balkon Rule activated"
 	
 		@cherrypy.expose
 		def balkon_rule_off(self):
-			rules.desklamp_rule.keep_alive = False
+			rules.balkon_rule.keep_alive = False
 			return "Balkon Rule deactivated"
 	
 		@cherrypy.expose
