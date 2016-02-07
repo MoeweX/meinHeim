@@ -62,10 +62,23 @@ class Rules(object):
 				now = datetime.datetime.now()
 				if (now.hour == 9 and now.minute == 0) or (now.hour == 19 and now.minute == 0):
 					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
-					tinkerforge_connection.switch_socket("nXN", 31, 1, 1)
+					#tinkerforge_connection.switch_socket("nXN", 31, 1, 1)
 					time.sleep(60)
-					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", stoped watering.")
-					tinkerforge_connection.switch_socket("nXN", 31, 1, 0)	
+					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", stopped watering.")
+					#tinkerforge_connection.switch_socket("nXN", 31, 1, 0)	
+				time.sleep(50)
+			cherrypy.log(self.tname + " was no longer kept alive.")
+			
+	class Balkon_Rule(Generale_Rule):	
+		def rule(self):
+			while self.keep_alive:
+				now = datetime.datetime.now()
+				if (now.hour == 17 and now.minute == 0):
+					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", activated Balkonbeleuchtung.")
+					tinkerforgeConnection.switch_socket("nXN", 50, 1, 1)	
+				if (now.hour == 22 and now.minute == 0):
+					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", deactivated Balkonbeleuchtung.")
+					tinkerforgeConnection.switch_socket("nXN", 50, 1, 0)
 				time.sleep(50)
 			cherrypy.log(self.tname + " was no longer kept alive.")
 			
@@ -82,13 +95,17 @@ class Rules(object):
 				time.sleep(10)
 			cherrypy.log(self.tname + " was no longer kept alive.")
 	
+
 	# define public variables for all rules
-	watering_rule = None	
+	watering_rule = None
+	balkon_rule = None
 	desklamp_rule = None
 			
 	def __init__(self):
 		self.watering_rule = Rules.Watering_Rule("Watering Rule")
 		self.watering_rule.activate_rule()
+		self.balkon_rule = Rules.Balkon_Rule("Balkon Rule")
+		self.balkon_rule.activate_rule()
 		self.desklamp_rule = Rules.Desklamp_Rule("Desklamp Rule")
 		self.desklamp_rule.activate_rule()
 		
@@ -160,6 +177,23 @@ class Webserver(object):
 		def watering_rule_off(self):
 			rules.watering_rule.keep_alive = False
 			return "Test Rule deactivated"
+			
+		@cherrypy.expose
+		def balkon_rule_on(self):
+			rules.desklamp_rule.activate_rule()
+			return "Balkon Rule activated"
+	
+		@cherrypy.expose
+		def balkon_rule_off(self):
+			rules.desklamp_rule.keep_alive = False
+			return "Balkon Rule deactivated"
+	
+		@cherrypy.expose
+		def balkon_rule_status(self):
+			if rules.balkon_rule.keep_alive:
+				return "<a href='.' onclick='return $.ajax(\"../balkon_rule_off\");'>Aktiv</a>"
+			else:
+				return "<a href='.' onclick='return $.ajax(\"../balkon_rule_on\");'>Deaktiv</a>"
 	
 		@cherrypy.expose
 		def watering_rule_status(self):
@@ -177,7 +211,7 @@ class Webserver(object):
 		def desk_lamb_rule_off(self):
 			rules.desklamp_rule.keep_alive = False
 			return "Desk Lamb Rule deactivated"
-	
+
 		@cherrypy.expose
 		def desk_lamb_rule_status(self):
 			if rules.desklamp_rule.keep_alive:
