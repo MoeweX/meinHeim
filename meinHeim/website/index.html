@@ -10,54 +10,18 @@
     <script src="js/frontend.js"></script>
   </head>
   <body>
-    
+
     <div class="row">
       <div class="large-12 columns">
         <center><h1>meinHeim - Heimsteuerung</h1></center>
       </div>
     </div>
-    
+
     <div class="row">
     	<div class="large-6 medium-6 columns">
     		<center><h3>Steuerung der Beleuchtung</h3></center>
-    		<div class="row">
-           		<div class="large-12 columns">
-	    			<div class="panel clearfix">
-	             		<p>Schreibtischlampe (30_3, nXN)</p>
-	             		<button class="small success right button" address="30" unit="3" state="1" style="width:100px">An</button>
-	             		<button class="small alert right button" address="30" unit="3" state="0" style="width:100px">Aus</button>
-	           		</div>
-           		</div>
-           		<div class="large-12 columns">
-	    			<div class="panel clearfix">
-	             		<p>Hintergrundbeleuchtung Weiß (30_2, nXN)</p>
-	             		<button class="small success right button" address="30" unit="2" state="1" style="width:100px">An</button>
-	             		<button class="small alert right button" address="30" unit="2" state="0" style="width:100px">Aus</button>
-	           		</div>
-           		</div>
-           		<div class="large-12 columns">
-	    			<div class="panel clearfix">
-	             		<p>Laterne (31_2, nXN)</p>
-	             		<button class="small success right button" address="31" unit="2" state="1" style="width:100px">An</button>
-	             		<button class="small alert right button" address="31" unit="2" state="0" style="width:100px">Aus</button>
-	           		</div>
-           		</div>
-           		<div class="large-12 columns">
-	    			<div class="panel clearfix">
-	             		<p>Nachtlicht (25_1, nXN)</p>
-	             		<button class="small success right button" address="25" unit="1" val="inc" style="width:50px">+</button>
-	             		<button class="small success right button" address="25" unit="1" val="dec" style="width:50px">-</button>
-	             		<button class="small alert right button" address="25" unit="1" state="0" style="width:100px">Aus</button>
-	           		</div>
-           		</div>
-           		<div class="large-12 columns">
-	    			<div class="panel clearfix">
-	             		<p>Balkonbeleuchtung (50_1, nXN)</p>
-	             		<button class="small success right button" address="50" unit="1" state="1" style="width:100px">An</button>
-	             		<button class="small alert right button" address="50" unit="1" state="0" style="width:100px">Aus</button>
-	           		</div>
-           		</div>
-    		</div>	
+    		<div class="row" id="sockets">
+    		</div>
 		</div>
 		<div class="large-6 medium-6 columns">
 			<center><h3>Zusätzliche Informationen</h3></center>
@@ -112,7 +76,7 @@
     		</div>
 		</div>
 	</div>
-	    
+
     <script src="js/vendor/jquery.js"></script>
     <script src="js/foundation.min.js"></script>
     <script>
