@@ -1,3 +1,7 @@
+import logging
+
+log = logging.getLogger() # the logger
+
 ##########################################################################################
 #Tinkerforge Module
 ##########################################################################################
@@ -14,10 +18,10 @@ class TinkerforgeConnection(object):
 	current_entries = dict()
 
 	def cb_enumerate(self, uid, connected_uid, position, hardware_version, firmware_version, device_identifier, enumeration_type):
-	
+
 		if enumeration_type == IPConnection.ENUMERATION_TYPE_DISCONNECTED:
 			del self.current_entries[uid]
-			
+
 		else:
 			if device_identifier == 13:
 				self.current_entries.update({uid: "Master Brick"})
@@ -33,25 +37,25 @@ class TinkerforgeConnection(object):
 	def switch_socket(self, uid, address, unit, state):
 		rs = BrickletRemoteSwitch(uid, self.ipcon)
 		rs.switch_socket_b(address, unit, state)
-		
+
 	def dimm_socket(self, uid, address, unit, value):
 		rs = BrickletRemoteSwitch(uid, self.ipcon)
 		rs.dim_socket_b(address, unit, value)
-		
+
 	def get_illuminance(self, uid):
 		try:
 			al = BrickletAmbientLight(uid, self.ipcon)
 			return al.get_illuminance() / 10
 		except Exception:
-			print(uid + " not connected")
+			log.warn(uid + " not connected")
 			return -1
-		
+
 	def get_distance(self, uid):
 		try:
 			dus = BrickletDistanceUS(uid, self.ipcon)
 			return dus.get_distance_value()
 		except Exception:
-			print(uid + " not connected")
+			log.warn(uid + " not connected")
 			return -1
 
 	def __init__(self):
@@ -63,13 +67,13 @@ class TinkerforgeConnection(object):
 ##########################################################################################
 #BVG Module
 ##########################################################################################
-		
+
 from bs4 import BeautifulSoup
 import requests
 class BVG(object):
-	
+
 	ACTUAL_API_ENDPOINT = 'http://mobil.bvg.de/Fahrinfo/bin/stboard.bin/dox?&boardType=depRT'
-	
+
 	def __init__(self, station, limit=5):
 		if isinstance(station, str):
 			self.station_enc = station.encode('iso-8859-1')
@@ -90,7 +94,7 @@ class BVG(object):
 		if response.ok:
 			soup = BeautifulSoup(response.text, "html.parser")
 			if soup.find_all('form'):
-				print("The station" + self.station + " does not exist.")
+				log.error("The station" + self.station + " does not exist.")
 				return None
 			else:
 				# The station seems to exist
@@ -107,7 +111,7 @@ class BVG(object):
 							dep = [self.station,
 									td[2].text.strip(),
 									td[0].text.strip(),
-									
+
 									td[1].text.strip()]
 							departures.append(dep)
 				return departures
@@ -115,7 +119,7 @@ class BVG(object):
 			try:
 				response.raise_for_status()
 			except requests.RequestException as e:
-				print(e)
+				log.error(e)
 			else:
-				print("An unknown error occured.")
+				log.error("An unknown error occured.")
 			return None

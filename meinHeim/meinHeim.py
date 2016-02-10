@@ -7,6 +7,8 @@ import time
 import datetime
 from threading import Thread
 import abc
+import logging
+import logging.config
 
 import cherrypy
 
@@ -19,6 +21,7 @@ from modules import BVG
 tinkerforge_connection = None
 bvg = None
 rules = None
+log = logging.getLogger() # the logger
 
 ##########################################################################################
 #Collection of all Rules
@@ -36,17 +39,17 @@ class Rules(object):
 			self.keep_alive = True
 			if self.thread != None: # check whether not initialized
 				if self.thread.isAlive(): # check whether was still alive
-					cherrypy.log(self.tname + " was still alive!")
+					log.info(self.tname + " was still alive!")
 					return
 
 			# not initialized or dead, does not matter
-			cherrypy.log("Activated Rule " + self.tname + ".")
+			log.info("Activated Rule " + self.tname + ".")
 			self.thread = Thread(name=self.tname, target=self.rule)
 			self.thread.setDaemon(True)
 			self.thread.start()
 
 		def deactivate_rule(self):
-			cherrypy.log("Rule " + self.tname + "will not be kept alive.")
+			log.info("Rule " + self.tname + "will not be kept alive.")
 			self.keep_alive = False
 
 		@abc.abstractmethod
@@ -61,26 +64,26 @@ class Rules(object):
 			while self.keep_alive:
 				now = datetime.datetime.now()
 				if (now.hour == 9 and now.minute == 0) or (now.hour == 19 and now.minute == 0):
-					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
+					log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
 					#tinkerforge_connection.switch_socket("nXN", 31, 1, 1)
 					time.sleep(60)
-					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", stopped watering.")
+					log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", stopped watering.")
 					#tinkerforge_connection.switch_socket("nXN", 31, 1, 0)
 				time.sleep(50)
-			cherrypy.log(self.tname + " was no longer kept alive.")
+			log.info(self.tname + " was no longer kept alive.")
 
 	class Balkon_Rule(Generale_Rule):
 		def rule(self):
 			while self.keep_alive:
 				now = datetime.datetime.now()
 				if (now.hour == 17 and now.minute == 0):
-					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", activated Balkonbeleuchtung.")
+					log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", activated Balkonbeleuchtung.")
 					tinkerforgeConnection.switch_socket("nXN", 50, 1, 1)
 				if (now.hour == 22 and now.minute == 0):
-					cherrypy.log("It is " + str(now.hour) + ":" + str(now.minute) + ", deactivated Balkonbeleuchtung.")
+					log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", deactivated Balkonbeleuchtung.")
 					tinkerforgeConnection.switch_socket("nXN", 50, 1, 0)
 				time.sleep(50)
-			cherrypy.log(self.tname + " was no longer kept alive.")
+			log.info(self.tname + " was no longer kept alive.")
 
 	class Desklamp_Rule(Generale_Rule):
 		def rule(self):
@@ -93,7 +96,7 @@ class Rules(object):
 					tinkerforge_connection.switch_socket("nXN", 30, 3, 0)
 					send_on = False
 				time.sleep(10)
-			cherrypy.log(self.tname + " was no longer kept alive.")
+			log.info(self.tname + " was no longer kept alive.")
 
 
 	# define public variables for all rules
@@ -281,8 +284,9 @@ if __name__ == '__main__':
 		'global': {
 			'server.socket_port': 8081,
 			'server.socket_host': '0.0.0.0',
-			'log.error_file': 'error.log',
-			'log.access_file': 'access.log'
+			'log.error_file': '',
+			'log.access_file': '',
+			'log.screen': False
 		},
 		'/': {
 			'tools.staticdir.root': os.path.abspath(os.getcwd())
@@ -294,6 +298,77 @@ if __name__ == '__main__':
 		}
 	}
 
+	#the logging configuratoin
+	log_conf = {
+	    'version': 1,
+
+	    'formatters': {
+	        'void': {
+	            'format': ''
+	        },
+	        'standard': {
+	            'format': '%(asctime)s [%(levelname)s] %(message)s'
+	        },
+	    },
+	    'handlers': {
+	        'default': {
+	            'level':'INFO',
+	            'class':'logging.StreamHandler',
+	            'formatter': 'standard',
+	            'stream': 'ext://sys.stdout'
+	        },
+	        'default_file': {
+	            'level':'INFO',
+	            'class':'logging.handlers.RotatingFileHandler',
+	            'formatter': 'standard',
+	            'filename': 'default.log',
+	            'maxBytes': 10485760,
+	            'backupCount': 20,
+	            'encoding': 'utf8'
+	        },
+	        'cherrypy_default_error': {
+	            'level':'INFO',
+	            'class':'logging.StreamHandler',
+	            'formatter': 'standard',
+	            'stream': 'ext://sys.stdout'
+	        },
+	        'cherrypy_default_error_file': {
+	            'level':'INFO',
+	            'class':'logging.handlers.RotatingFileHandler',
+	            'formatter': 'standard',
+	            'filename': 'cherrypy_default_error.log',
+	            'maxBytes': 10485760,
+	            'backupCount': 20,
+	            'encoding': 'utf8'
+	        },
+	        'cherrypy_access': {
+	            'level':'INFO',
+	            'class': 'logging.handlers.RotatingFileHandler',
+	            'formatter': 'void',
+	            'filename': 'cherrypy_access.log',
+	            'maxBytes': 10485760,
+	            'backupCount': 20,
+	            'encoding': 'utf8'
+	        }
+	    },
+	    'loggers': {
+	        '': {
+	            'handlers': ['default', 'default_file'],
+	            'level': 'INFO'
+	        },
+	        'cherrypy.access': {
+	            'handlers': ['cherrypy_access'],
+	            'level': 'INFO',
+	            'propagate': False
+	        },
+	        'cherrypy.error': {
+	            'handlers': ['cherrypy_default_error', 'cherrypy_default_error_file'],
+	            'level': 'INFO',
+	            'propagate': False
+	        },
+	    }
+	}
+
 	# start all needed modules
 	tinkerforge_connection = TinkerforgeConnection()
 	bvg = BVG("Seesener Str. (Berlin)", limit=4)
@@ -301,7 +376,9 @@ if __name__ == '__main__':
 	# load the rules
 	rules = Rules()
 
-	# start the webserver
+	# start the webserver and configure logging
+	cherrypy.engine.unsubscribe('graceful', cherrypy.log.reopen_files)
+	logging.config.dictConfig(log_conf)
 	cherrypy.tree.mount(Webserver().socket, '/socket')
 	cherrypy.tree.mount(Webserver().dimmer, '/dimmer')
 	cherrypy.tree.mount(Webserver().rule, '/rule')
