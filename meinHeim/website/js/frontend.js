@@ -6,7 +6,7 @@ $(document).ready(function() {
 		url: "/socket/list",
 	})
 	.done(function(string) {
-		$("#sockets").replaceWith(string);
+		$("#sockets").append(string);
 	});
 
 	//Load bvg information
@@ -15,7 +15,7 @@ $(document).ready(function() {
 		url: "/additional_information/bvg",
 	})
 	.done(function(string) {
-		$("#information_bvg").replaceWith(string);
+		$("#information_bvg").append(string);
 	});
 
 	//Load connected devices
@@ -24,7 +24,7 @@ $(document).ready(function() {
 		url: "/additional_information/connected_devices",
 	})
 	.done(function(string) {
-		$("#information_connected_devices").replaceWith(string);
+		$("#information_connected_devices").append(string);
 	});
 
 	//Load illuminance from BrickletAmbientLight(amm)
@@ -45,31 +45,13 @@ $(document).ready(function() {
 		$("#information_iTm_distance").replaceWith('<li id="information_iTm_distance">Aktuelle Entfernung (iTm): ' + string + '</li>');
 	});
 
-	//Load status of watering rule
+	//Load rules
 	$.ajax({
 		type: "GET",
-		url: "/rule/watering_rule_status",
+		url: "/rule/list",
 	})
 	.done(function(string) {
-		$("#watering_rule_status").replaceWith('<li id="watering_rule_status">Bewässerungsregel (9 + 19 Uhr): ' + string + '</li>');
-	});
-
-	//Load status of balkon rule
-	$.ajax({
-		type: "GET",
-		url: "/rule/balkon_rule_status",
-	})
-	.done(function(string) {
-		$("#balkon_rule_status").replaceWith('<li id="balkon_rule_status">Balkonbeleuchtungsregel (17 - 22 Uhr): ' + string + '</li>');
-	});
-
-	//Load status of desk lamp rule
-	$.ajax({
-		type: "GET",
-		url: "/rule/desk_lamb_rule_status",
-	})
-	.done(function(string) {
-		$("#desk_lamb_rule_status").replaceWith('<li id="desk_lamb_rule_status">Schreibtischlampenregel: ' + string + '</li>');
+		$("#rules").append(string);
 	});
 
 });

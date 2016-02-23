@@ -49,7 +49,7 @@ class Rules(object):
 			self.thread.start()
 
 		def deactivate_rule(self):
-			log.info("Rule " + self.tname + "will not be kept alive.")
+			log.info("Rule " + self.tname + " will not be kept alive.")
 			self.keep_alive = False
 
 		@abc.abstractmethod
@@ -65,10 +65,10 @@ class Rules(object):
 				now = datetime.datetime.now()
 				if (now.hour == 9 and now.minute == 0) or (now.hour == 19 and now.minute == 0):
 					log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
-					#tinkerforge_connection.switch_socket("nXN", 31, 1, 1)
+					tinkerforge_connection.switch_socket("nXN", 50, 1, 1)
 					time.sleep(60)
 					log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", stopped watering.")
-					#tinkerforge_connection.switch_socket("nXN", 31, 1, 0)
+					tinkerforge_connection.switch_socket("nXN", 50, 1, 0)
 				time.sleep(50)
 			log.info(self.tname + " was no longer kept alive.")
 
@@ -85,29 +85,15 @@ class Rules(object):
 				time.sleep(50)
 			log.info(self.tname + " was no longer kept alive.")
 
-	class Desklamp_Rule(Generale_Rule):
-		def rule(self):
-			send_on = False
-			while self.keep_alive:
-				if tinkerforge_connection.get_distance("iTm") <= 1500 and tinkerforge_connection.get_illuminance("amm") <= 30 and send_on == False:
-					tinkerforge_connection.switch_socket("nXN", 30, 3, 1)
-					send_on = True
-				elif (tinkerforge_connection.get_distance("iTm") > 1500 or tinkerforge_connection.get_illuminance("amm") > 30) and send_on == True:
-					tinkerforge_connection.switch_socket("nXN", 30, 3, 0)
-					send_on = False
-				time.sleep(10)
-			log.info(self.tname + " was no longer kept alive.")
-
-
 	# define public variables for all rules
-	watering_rule = None
-	balkon_rule = None
-	desklamp_rule = None
+	active_rules = None
 
 	def __init__(self):
-		self.watering_rule = Rules.Watering_Rule("Watering Rule")
-		self.balkon_rule = Rules.Balkon_Rule("Balkon Rule")
-		self.desklamp_rule = Rules.Desklamp_Rule("Desklamp Rule")
+		# specify which rules should be currently active
+		self.active_rules = [
+			#Rules.Watering_Rule("Bewässerungsregel (9 + 19)"),
+			Rules.Balkon_Rule("Balkonregel (17 - 22)"),
+		]
 
 ##########################################################################################
 #The Webserver
@@ -148,7 +134,7 @@ class Webserver(object):
 				int(address),
 				int(unit),
 				int(state))
-			return "Tried to switch socket"
+			log.info("Tried to  switch socket " + str(address) + "-" + str(unit))
 
 		def create_socket_entry(self, name, address, unit):
 			return (
@@ -156,13 +142,13 @@ class Webserver(object):
 				"<div class='panel clearfix'>" +
 					"<p>" + name + " (" + str(address) + "_" + str(unit) + ", nXN)</p>" +
 					"<button class='small success right button' "+
-					"onclick='console.log($.ajax(\"/socket/nXN?address=" + str(address) +
-					"&unit=" + str(unit) +
-					"&state=1\"));' style='width:100px'>An</button>" +
+					"onclick='$.ajax(\"/socket/nXN?address=" + str(address) +
+						"&unit=" + str(unit) +
+						"&state=1\");' style='width:100px'>An</button>" +
 					"<button class='small alert right button' "+
-					"onclick='console.log($.ajax(\"/socket/nXN?address=" + str(address) +
-					"&unit=" + str(unit) +
-					"&state=0\"));' style='width:100px'>Aus</button>"
+					"onclick='$.ajax(\"/socket/nXN?address=" + str(address) +
+						"&unit=" + str(unit) +
+						"&state=0\");' style='width:100px'>Aus</button>"
 				"</div>" +
 			"</div>"
 			)
@@ -195,56 +181,44 @@ class Webserver(object):
 
 	# buttons that control the rules
 	class Rule():
-		@cherrypy.expose
-		def watering_rule_on(self):
-			rules.watering_rule.activate_rule()
-			return "Watering Rule activated"
 
 		@cherrypy.expose
-		def watering_rule_off(self):
-			rules.watering_rule.keep_alive = False
-			return "Test Rule deactivated"
+		def list(self):
+			list = ""
+			for index in range(0, len(rules.active_rules)):
+				list += self.create_rule_entry(index)
+			return list
 
 		@cherrypy.expose
-		def watering_rule_status(self):
-			if rules.watering_rule.keep_alive:
-				return "<a href='.' onclick='return $.ajax(\"/rule/watering_rule_off\");'>Aktiv</a>"
+		def toggle_rule_keep_alive(self, position, keep_alive):
+			position = int(position)
+			if position >= 0 and position < len(rules.active_rules):
+				name = name = rules.active_rules[position].tname
+				if keep_alive == "false":
+					rules.active_rules[position].deactivate_rule()
+				else:
+					rules.active_rules[position].activate_rule()
 			else:
-				return "<a href='.' onclick='return $.ajax(\"/rule/watering_rule_on\");'>Deaktiv</a>"
+				log.warn("No rule at position " + str(position))
 
-		@cherrypy.expose
-		def balkon_rule_on(self):
-			rules.balkon_rule.activate_rule()
-			return "Balkon Rule activated"
-
-		@cherrypy.expose
-		def balkon_rule_off(self):
-			rules.balkon_rule.keep_alive = False
-			return "Balkon Rule deactivated"
-
-		@cherrypy.expose
-		def balkon_rule_status(self):
-			if rules.balkon_rule.keep_alive:
-				return "<a href='.' onclick='return $.ajax(\"/rule/balkon_rule_off\");'>Aktiv</a>"
+		def create_rule_entry(self, position):
+			name = rules.active_rules[position].tname
+			if rules.active_rules[position].keep_alive:
+				checked = "checked "
 			else:
-				return "<a href='.' onclick='return $.ajax(\"/rule/balkon_rule_on\");'>Deaktiv</a>"
+				checked = ""
+			return (
+			"<tr><td>" + name + "</td>" +
+				"<td><div class='switch small' style='margin-bottom:0rem'>" +
+					 "<input id= '" + name + "' type='checkbox' " + checked +
+					 	"onclick='$.ajax(\"/rule/toggle_rule_keep_alive?" +
+						"position=" + str(position) +
+						"&keep_alive=\" + event.target.checked);'>" +
+					 "<label for='" + name + "'></label>" +
+				"</div></td>" +
+			"</td>"
+			)
 
-		@cherrypy.expose
-		def desk_lamb_rule_on(self):
-			rules.desklamp_rule.activate_rule()
-			return "Desk Lamb Rule activated"
-
-		@cherrypy.expose
-		def desk_lamb_rule_off(self):
-			rules.desklamp_rule.keep_alive = False
-			return "Desk Lamb Rule deactivated"
-
-		@cherrypy.expose
-		def desk_lamb_rule_status(self):
-			if rules.desklamp_rule.keep_alive:
-				return "<a href='.' onclick='return $.ajax(\"/rule/desk_lamb_rule_off\");'>Aktiv</a>"
-			else:
-				return "<a href='.' onclick='return $.ajax(\"/rule/desk_lamb_rule_on\");'>Deaktiv</a>"
 
 	# queries that provide additional informationen
 	class AdditionalInformation():
@@ -257,6 +231,7 @@ class Webserver(object):
 				string += "<li>"+key+" ("+tinkerforge_connection.current_entries[key]+")</li>"
 			return string
 
+		# TODO Rework the answer to new layout
 		@cherrypy.expose
 		def amm_illuminance(self):
 			return str(tinkerforge_connection.get_illuminance("amm"))
