@@ -231,14 +231,12 @@ class Webserver(object):
 				string += "<li>"+key+" ("+tinkerforge_connection.current_entries[key]+")</li>"
 			return string
 
-		# TODO Rework the answer to new layout
 		@cherrypy.expose
 		def amm_illuminance(self):
-			return str(tinkerforge_connection.get_illuminance("amm"))
-
-		@cherrypy.expose
-		def iTm_distance(self):
-			return str(tinkerforge_connection.get_distance("iTm"))
+			return (
+			"<li id='information_amm_illuminance'>Aktuelle Helligkeit (amm): " +
+			str(tinkerforge_connection.get_illuminance("amm")) + " Lux</li>"
+			)
 
 		@cherrypy.expose
 		def bvg(self):

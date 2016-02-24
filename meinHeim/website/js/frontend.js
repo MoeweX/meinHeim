@@ -33,16 +33,7 @@ $(document).ready(function() {
 		url: "/additional_information/amm_illuminance",
 	})
 	.done(function(string) {
-		$("#information_amm_illuminance").replaceWith('<li id="information_amm_illuminance">Aktuelle Helligkeit (amm): ' + string + ' Lux</li>');
-	});
-
-	//Load distance from BrickletDistanceUS(iTm)
-	$.ajax({
-		type: "GET",
-		url: "/additional_information/iTm_distance",
-	})
-	.done(function(string) {
-		$("#information_iTm_distance").replaceWith('<li id="information_iTm_distance">Aktuelle Entfernung (iTm): ' + string + '</li>');
+		$("#information_amm_illuminance").replaceWith(string);
 	});
 
 	//Load rules
