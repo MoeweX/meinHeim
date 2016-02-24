@@ -78,10 +78,10 @@ class Rules(object):
 				now = datetime.datetime.now()
 				if (now.hour == 17 and now.minute == 0):
 					log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", activated Balkonbeleuchtung.")
-					tinkerforgeConnection.switch_socket("nXN", 50, 1, 1)
+					tinkerforge_connection.switch_socket("nXN", 50, 1, 1)
 				if (now.hour == 22 and now.minute == 0):
 					log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", deactivated Balkonbeleuchtung.")
-					tinkerforgeConnection.switch_socket("nXN", 50, 1, 0)
+					tinkerforge_connection.switch_socket("nXN", 50, 1, 0)
 				time.sleep(50)
 			log.info(self.tname + " was no longer kept alive.")
 
