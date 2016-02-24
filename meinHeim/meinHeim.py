@@ -155,6 +155,26 @@ class Webserver(object):
 
 	# buttons that control dimmer
 	class Dimmer():
+
+		@cherrypy.expose
+		def list(self):
+			list = self.create_socket_entry("Nachtlicht", 25, 1)
+			return list
+
+		@cherrypy.expose
+		def nXN(self, address=-1, unit=-1, dimValue=-1):
+			if (address == -1 or unit == -1 or state == -1):
+				return ("Invalid information: " + str(address)
+					+ ", " + str(unit) + ", " + str(state))
+			tinkerforge_connection.dimm_socket(
+				"nXN",
+				int(address),
+				int(unit),
+				int(dimValue))
+			log.info("Tried to dim socket " + str(address) + "-" + str(unit))
+			#TODO evaluate whether dimmer turns of
+
+
 		# TODO does not work yet
 		value_25_1 = 10
 
@@ -218,7 +238,6 @@ class Webserver(object):
 				"</div></td>" +
 			"</td>"
 			)
-
 
 	# queries that provide additional informationen
 	class AdditionalInformation():
