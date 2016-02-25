@@ -103,7 +103,6 @@ class Webserver(object):
 	# initialize subclasses
 	def __init__(self):
 		self.socket = self.Socket()
-		self.dimmer = self.Dimmer()
 		self.rule = self.Rule()
 		self.additional_information = self.AdditionalInformation()
 
@@ -120,12 +119,12 @@ class Webserver(object):
 			list = self.create_socket_entry("Schreibtischlampe", 30, 3)
 			list += self.create_socket_entry("Hintergrundbeleuchtung", 30, 2)
 			list += self.create_socket_entry("Laterne", 31, 2)
-			#list += self.create_socket_entry("Nachtlicht", 25, 1)
+			list += self.create_dim_entry("Nachtlicht", 25, 1)
 			list += self.create_socket_entry("Balkonbeleuchtung", 50, 1)
 			return list
 
 		@cherrypy.expose
-		def nXN(self, address=-1, unit=-1, state=-1):
+		def switch(self, address=-1, unit=-1, state=-1):
 			if (address == -1 or unit == -1 or state == -1):
 				return ("Invalid information: " + str(address)
 					+ ", " + str(unit) + ", " + str(state))
@@ -136,68 +135,51 @@ class Webserver(object):
 				int(state))
 			log.info("Tried to  switch socket " + str(address) + "-" + str(unit))
 
-		def create_socket_entry(self, name, address, unit):
-			return (
-			"<div class='large-12 columns'>" +
-				"<div class='panel clearfix'>" +
-					"<p>" + name + " (" + str(address) + "_" + str(unit) + ", nXN)</p>" +
-					"<button class='small success right button' "+
-					"onclick='$.ajax(\"/socket/nXN?address=" + str(address) +
-						"&unit=" + str(unit) +
-						"&state=1\");' style='width:100px'>An</button>" +
-					"<button class='small alert right button' "+
-					"onclick='$.ajax(\"/socket/nXN?address=" + str(address) +
-						"&unit=" + str(unit) +
-						"&state=0\");' style='width:100px'>Aus</button>"
-				"</div>" +
-			"</div>"
-			)
-
-	# buttons that control dimmer
-	class Dimmer():
-
 		@cherrypy.expose
-		def list(self):
-			list = self.create_socket_entry("Nachtlicht", 25, 1)
-			return list
-
-		@cherrypy.expose
-		def nXN(self, address=-1, unit=-1, dimValue=-1):
+		def dim(self, address=-1, unit=-1, dimValue=-1):
 			if (address == -1 or unit == -1 or state == -1):
 				return ("Invalid information: " + str(address)
 					+ ", " + str(unit) + ", " + str(state))
-			tinkerforge_connection.dimm_socket(
+			tinkerforge_connection.dim_socket(
 				"nXN",
 				int(address),
 				int(unit),
 				int(dimValue))
 			log.info("Tried to dim socket " + str(address) + "-" + str(unit))
-			#TODO evaluate whether dimmer turns of
 
+		def create_socket_entry(self, name, address, unit):
+			return (
+			"<div class='large-12 columns'>" +
+			"<div class='panel clearfix'>" +
+				"<p>" + name + " (" + str(address) + "_" + str(unit) + ", nXN)</p>" +
+				"<button class='small alert right button' " +
+					"onclick='$.ajax(\"/socket/switch?address=" + str(address) +
+					"&unit=" + str(unit) +
+					"&state=0\");' style='width:100px'>Aus</button>" +
+				"<button class='small success right button' " +
+					"onclick='$.ajax(\"/socket/switch?address=" + str(address) +
+					"&unit=" + str(unit) +
+					"&state=1\");' style='width:100px'>An</button>" +
+			"</div>" +
+			"</div>"
+			)
 
-		# TODO does not work yet
-		value_25_1 = 10
-
-		@cherrypy.expose
-		def button_nXN_25_1_increase(self):
-			if self.value_25_1 < 15:
-				self.value_25_1 = self.value_25_1 + 1
-				tinkerforge_connection.dimm_socket("nXN", 25, 1, self.value_25_1)
-				return "Neuer Dimmwert 25_1 = " + str(self.value_25_1)
-			return "Dimmwert war schon bei 15"
-
-		@cherrypy.expose
-		def button_nXN_25_1_decrease(self):
-			if self.value_25_1 > 0:
-				self.value_25_1 = self.value_25_1 - 1
-				tinkerforge_connection.dimm_socket("nXN", 25, 1, self.value_25_1)
-				return "Neuer Dimmwert 25_1 = " + str(self.value_25_1)
-			return "Dimmwert war schon bei 0"
-
-		@cherrypy.expose
-		def button_nXN_25_1_off(self):
-			tinkerforge_connection.switch_socket("nXN", 25, 1, 0)
-			return "Deaktiviere 25_0"
+		def create_dim_entry(self, name, address, unit):
+			return (
+			"<div class='large-12 columns'>" +
+			"<div class='panel clearfix'>" +
+				"<p>" + name + " (" + str(address) + "_" + str(unit) + ", nXN)</p>" +
+				"<button class='small alert right button' " +
+					"onclick='$.ajax(\"/socket/dim?address=" + str(address) +
+					"&unit=" + str(unit) +
+					"&state=0\");' style='width:100px'>Aus</button>" +
+				"<div class='range-slider right' data-slider style=width:100px>" +
+  					"<span class='range-slider-handle' role='slider' tabindex='0'>" +
+					"</span><span class='range-slider-active-segment'></span>" +
+  					"<input type='hidden'></div>" +
+			"</div>" +
+			"</div>"
+			)
 
 	# buttons that control the rules
 	class Rule():
@@ -372,7 +354,6 @@ if __name__ == '__main__':
 	cherrypy.engine.unsubscribe('graceful', cherrypy.log.reopen_files)
 	logging.config.dictConfig(log_conf)
 	cherrypy.tree.mount(Webserver().socket, '/socket')
-	cherrypy.tree.mount(Webserver().dimmer, '/dimmer')
 	cherrypy.tree.mount(Webserver().rule, '/rule')
 	cherrypy.tree.mount(Webserver().additional_information, '/additional_information')
 	cherrypy.quickstart(Webserver(), '/', conf)
