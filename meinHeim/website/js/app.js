@@ -1,3 +1,4 @@
+$(document).foundation();
 $(document).ready(function() {
 
 	//Load socket list
@@ -7,6 +8,7 @@ $(document).ready(function() {
 	})
 	.done(function(string) {
 		$("#sockets").append(string);
+		$(document).foundation();
 	});
 
 	//Load bvg information

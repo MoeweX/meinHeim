@@ -137,9 +137,9 @@ class Webserver(object):
 
         @cherrypy.expose
         def dim(self, address=-1, unit=-1, dimValue=-1):
-            if (address == -1 or unit == -1 or state == -1):
+            if (address == -1 or unit == -1 or dimValue == -1):
                 return ("Invalid information: " + str(address)
-                    + ", " + str(unit) + ", " + str(state))
+                    + ", " + str(unit) + ", " + str(dimValue))
             tinkerforge_connection.dim_socket(
                 "nXN",
                 int(address),
@@ -150,33 +150,39 @@ class Webserver(object):
         def create_socket_entry(self, name, address, unit):
             return (
             "<div class='large-12 columns'>" +
-            "<div class='panel clearfix'>" +
+            "<div class='callout secondary'>" +
                 "<p>" + name + " (" + str(address) + "_" + str(unit) + ", nXN)</p>" +
-                "<button class='small alert right button' " +
+                "<div class='expanded button-group'>" +
+                "<button class='alert button' " +
                     "onclick='$.ajax(\"/socket/switch?address=" + str(address) +
                     "&unit=" + str(unit) +
-                    "&state=0\");' style='width:100px'>Aus</button>" +
-                "<button class='small success right button' " +
+                    "&state=0\");'>Aus</button>" +
+                "<button class='success button' " +
                     "onclick='$.ajax(\"/socket/switch?address=" + str(address) +
                     "&unit=" + str(unit) +
-                    "&state=1\");' style='width:100px'>An</button>" +
+                    "&state=1\");'>An</button>" +
+                "</div>" +
             "</div>" +
             "</div>"
             )
 
         def create_dim_entry(self, name, address, unit):
+            id = str(address) + "_" + str(unit)
             return (
             "<div class='large-12 columns'>" +
-            "<div class='panel clearfix'>" +
-                "<p>" + name + " (" + str(address) + "_" + str(unit) + ", nXN)</p>" +
-                "<button class='small alert right button' " +
-                    "onclick='$.ajax(\"/socket/dim?address=" + str(address) +
+            "<div class='callout secondary'>" +
+                "<p>" + name + " (" + id + ", nXN)</p>" +
+                "<div class='slider' data-slider data-initial-start='0' data-end='15'>"+
+                    "<span class='slider-handle' data-slider-handle role='slider' " +
+                    "tabindex='1' onclick='$.ajax(\"/socket/dim?address=" + str(address) +
                     "&unit=" + str(unit) +
-                    "&state=0\");' style='width:100px'>Aus</button>" +
-                "<div class='range-slider right' data-slider style=width:100px>" +
-                    "<span class='range-slider-handle' role='slider' tabindex='0'>" +
-                    "</span><span class='range-slider-active-segment'></span>" +
-                    "<input type='hidden'></div>" +
+                    "&dimValue=\" + $(\"#" + id + "\").val());'></span>" +
+                    "<span class='slider-fill' data-slider-fill></span>" +
+                    "<input id='" + id + "' type='hidden'></div>" +
+                "<button class='alert expanded button' " +
+                    "onclick='$.ajax(\"/socket/switch?address=" + str(address) +
+                    "&unit=" + str(unit) +
+                    "&state=0\");' >Aus</button>" +
             "</div>" +
             "</div>"
             )
@@ -211,12 +217,12 @@ class Webserver(object):
                 checked = ""
             return (
             "<tr><td>" + name + "</td>" +
-                "<td><div class='switch small' style='margin-bottom:0rem'>" +
-                     "<input id= '" + name + "' type='checkbox' " + checked +
+                "<td><div class='switch'>" +
+                     "<input class='switch-input' id= '" + name + "' type='checkbox' " + checked +
                          "onclick='$.ajax(\"/rule/toggle_rule_keep_alive?" +
                         "position=" + str(position) +
                         "&keep_alive=\" + event.target.checked);'>" +
-                     "<label for='" + name + "'></label>" +
+                     "<label class='switch-paddle' for='" + name + "'></label>" +
                 "</div></td>" +
             "</td>"
             )

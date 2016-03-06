@@ -2,81 +2,78 @@
 <html class="no-js" lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>meinHeim</title>
     <link rel="stylesheet" href="css/foundation.css" />
-    <script src="js/vendor/modernizr.js"></script>
-    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
-    <script src="js/frontend.js"></script>
+    <link rel="stylesheet" href="css/app.css" />
   </head>
   <body>
-
-    <div class="row">
-      <div class="large-12 columns">
-        <center><h1>meinHeim - Heimsteuerung</h1></center>
+      <div class="row">
+        <div class="large-12 columns">
+          <center><h1>meinHeim - Heimsteuerung</h1></center>
+        </div>
       </div>
-    </div>
 
-    <div class="row">
-    	<div class="large-6 medium-6 columns">
-    		<center><h3>Steuerung der Beleuchtung</h3></center>
-    		<div class="row" id="sockets">
-    		</div>
-		</div>
-		<div class="large-6 medium-6 columns">
-			<center><h3>Zusätzliche Informationen</h3></center>
-			<div class="row">
-    			<div class="large-12 columns">
-    				<div class="panel">
-	             		<p>Ist-Abfahrtzeiten Seesener Str.</p>
-	             		<div class="row">
-	             			<div class="large-1 columns"></div>
-	             			<div class="large-11 columns">
-			             		<ul id="information_bvg" >
-			             		</ul>
-			             	</div>
-	             		</div>
-	           		</div>
-	    			<div class="panel">
-	             		<p>Angeschlossene Geräte</p>
-	             		<div class="row">
-	             			<div class="large-1 columns"></div>
-	             			<div class="large-11 columns">
-			             		<ul id="information_connected_devices" >
-			             		</ul>
-			             	</div>
-	             		</div>
-	           		</div>
-	           		<div class="panel">
-	             		<p>Aktive Regeln</p>
-	             		<div class="row">
-	             			<div class="large-1 columns"></div>
-	             			<div class="large-11 columns">
-			             		<table id="rules" style="width:100%">
-			             		</table>
-			             	</div>
-	             		</div>
-	           		</div>
-	           		<div class="panel">
-	             		<p>Sensordaten</p>
-	             		<div class="row">
-	             			<div class="large-1 columns"></div>
-	             			<div class="large-11 columns">
-			             		<ul>
-                                    <li id="information_amm_illuminance"></li>
-			             		</ul>
-			             	</div>
-	             		</div>
-	           		</div>
-           		</div>
-    		</div>
-		</div>
-	</div>
+      <div class="row">
+          <div class="large-6 medium-6 columns">
+              <center><h3>Steuerung der Beleuchtung</h3></center>
+              <div class="row" id="sockets">
+              </div>
+          </div>
+          <div class="large-6 medium-6 columns">
+              <center><h3>Zusätzliche Informationen</h3></center>
+              <div class="row">
+                  <div class="large-12 columns">
+                      <div class="callout secondary small">
+                          <p>Ist-Abfahrtzeiten Seesener Str.</p>
+                          <div class="row">
+                              <div class="large-1 columns"></div>
+                              <div class="large-11 columns">
+                                  <ul id="information_bvg" >
+                                  </ul>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="callout secondary small">
+                          <p>Angeschlossene Geräte</p>
+                          <div class="row">
+                              <div class="large-1 columns"></div>
+                              <div class="large-11 columns">
+                                  <ul id="information_connected_devices" >
+                                  </ul>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="callout secondary small">
+                          <p>Aktive Regeln</p>
+                          <div class="row">
+                              <div class="large-1 columns"></div>
+                              <div class="large-11 columns">
+                                  <table id="rules" style="width:100%">
+                                  </table>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="callout secondary small">
+                          <p>Sensordaten</p>
+                          <div class="row">
+                              <div class="large-1 columns"></div>
+                              <div class="large-11 columns">
+                                  <ul>
+                                      <li id="information_amm_illuminance"></li>
+                                  </ul>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
 
-    <script src="js/vendor/jquery.js"></script>
+    <script src="js/vendor/jquery.min.js"></script>
+    <script src="js/vendor/what-input.min.js"></script>
     <script src="js/foundation.min.js"></script>
-    <script>
-      $(document).foundation();
-    </script>
+    <script src="js/app.js"></script>
   </body>
 </html>
