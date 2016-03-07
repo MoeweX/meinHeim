@@ -16,16 +16,19 @@ from modules import TinkerforgeConnection
 from modules import BVG
 
 ##########################################################################################
-#Global Variables
+# Global Variables
 ##########################################################################################
 tinkerforge_connection = None
 bvg = None
 rules = None
-log = logging.getLogger() # the logger
+log = logging.getLogger()  # the logger
+
 
 ##########################################################################################
-#Collection of all Rules
+# Collection of all Rules
 ##########################################################################################
+
+
 class Rules(object):
 
     class Generale_Rule():
@@ -37,8 +40,8 @@ class Rules(object):
 
         def activate_rule(self):
             self.keep_alive = True
-            if self.thread != None: # check whether not initialized
-                if self.thread.isAlive(): # check whether was still alive
+            if self.thread is not None:  # check whether already initialized
+                if self.thread.isAlive():  # check whether was still alive
                     log.info(self.tname + " was still alive!")
                     return
 
@@ -63,11 +66,14 @@ class Rules(object):
         def rule(self):
             while self.keep_alive:
                 now = datetime.datetime.now()
-                if (now.hour == 9 and now.minute == 0) or (now.hour == 19 and now.minute == 0):
-                    log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", started watering.")
+                if ((now.hour == 9 and now.minute == 0) or
+                        (now.hour == 19 and now.minute == 0)):
+                    log.info("It is {0!s}:{1!s}, started watering."
+                             .format(now.hour, now.minute))
                     tinkerforge_connection.switch_socket("nXN", 50, 1, 1)
                     time.sleep(60)
-                    log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", stopped watering.")
+                    log.info("It is {0!s}:{1!s}, stopped watering."
+                             .format(now.hour, now.minute))
                     tinkerforge_connection.switch_socket("nXN", 50, 1, 0)
                 time.sleep(50)
             log.info(self.tname + " was no longer kept alive.")
@@ -77,10 +83,12 @@ class Rules(object):
             while self.keep_alive:
                 now = datetime.datetime.now()
                 if (now.hour == 17 and now.minute == 0):
-                    log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", activated Balkonbeleuchtung.")
+                    log.info("It is {0!s}:{1!s}, activated Balkonbeleuchtung."
+                             .format(now.hour, now.minute))
                     tinkerforge_connection.switch_socket("nXN", 50, 1, 1)
                 if (now.hour == 22 and now.minute == 0):
-                    log.info("It is " + str(now.hour) + ":" + str(now.minute) + ", deactivated Balkonbeleuchtung.")
+                    log.info("It is {0!s}:{1!s}, deactivated Balkonbeleuchtung."
+                             .format(now.hour, now.minute))
                     tinkerforge_connection.switch_socket("nXN", 50, 1, 0)
                 time.sleep(50)
             log.info(self.tname + " was no longer kept alive.")
@@ -91,13 +99,16 @@ class Rules(object):
     def __init__(self):
         # specify which rules should be currently active
         self.active_rules = [
-            #Rules.Watering_Rule("Bewässerungsregel (9 + 19)"),
+            # Rules.Watering_Rule("Bewässerungsregel (9 + 19)"),
             Rules.Balkon_Rule("Balkonregel (17 - 22)"),
         ]
 
+
 ##########################################################################################
-#The Webserver
+# The Webserver
 ##########################################################################################
+
+
 class Webserver(object):
 
     # initialize subclasses
@@ -111,7 +122,7 @@ class Webserver(object):
     def index(self):
             raise cherrypy.HTTPRedirect("/static")
 
-    # buttons to switch normal sockets + shutdown dimmer
+    # control sockets and dimmer
     class Socket():
 
         @cherrypy.expose
@@ -126,68 +137,62 @@ class Webserver(object):
         @cherrypy.expose
         def switch(self, address=-1, unit=-1, state=-1):
             if (address == -1 or unit == -1 or state == -1):
-                return ("Invalid information: " + str(address)
-                    + ", " + str(unit) + ", " + str(state))
-            tinkerforge_connection.switch_socket(
-                "nXN",
-                int(address),
-                int(unit),
-                int(state))
-            log.info("Tried to  switch socket " + str(address) + "-" + str(unit))
+                return ("Invalid information: {0!s}, {1!s}, {2!s}."
+                        .format(address, unit, state))
+            tinkerforge_connection.switch_socket("nXN", int(address), int(unit),
+                                                 int(state))
+            log.info("Sending signal to switch socket {0!s}-{1!s} to {2!s}."
+                     .format(address, unit, state))
 
         @cherrypy.expose
         def dim(self, address=-1, unit=-1, dimValue=-1):
             if (address == -1 or unit == -1 or dimValue == -1):
-                return ("Invalid information: " + str(address)
-                    + ", " + str(unit) + ", " + str(dimValue))
-            tinkerforge_connection.dim_socket(
-                "nXN",
-                int(address),
-                int(unit),
-                int(dimValue))
-            log.info("Tried to dim socket " + str(address) + "-" + str(unit))
+                return ("Invalid information: {0!s}, {1!s}, {2!s}."
+                        .format(address, unit, dimValue))
+            tinkerforge_connection.dim_socket("nXN", int(address), int(unit),
+                                              int(dimValue))
+            log.info("Tried to dim socket {0!s}-{1!s} to {2!s}."
+                     .format(address, unit, dimValue))
 
         def create_socket_entry(self, name, address, unit):
-            return (
-            "<div class='large-12 columns'>" +
-            "<div class='callout secondary'>" +
-                "<p>" + name + " (" + str(address) + "_" + str(unit) + ", nXN)</p>" +
-                "<div class='expanded button-group'>" +
-                "<button class='alert button' " +
-                    "onclick='$.ajax(\"/socket/switch?address=" + str(address) +
-                    "&unit=" + str(unit) +
-                    "&state=0\");'>Aus</button>" +
-                "<button class='success button' " +
-                    "onclick='$.ajax(\"/socket/switch?address=" + str(address) +
-                    "&unit=" + str(unit) +
-                    "&state=1\");'>An</button>" +
-                "</div>" +
-            "</div>" +
-            "</div>"
-            )
+            return """
+                <div class='large-12 columns'>
+                    <div class='callout secondary'>
+                        <p>{n} ({a}_{u}, nXN)</p>
+                        <div class='expanded button-group'>
+                            <button class='alert button' onclick='$.ajax(
+                                "/socket/switch?address={a}&unit={u}&state=0");'>Aus
+                            </button>
+                            <button class='success button' onclick='$.ajax(
+                                "/socket/switch?address={a}&unit={u}&state=1");'>An
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            """.format(n=name, a=str(address), u=str(unit))
 
         def create_dim_entry(self, name, address, unit):
             id = str(address) + "_" + str(unit)
-            return (
-            "<div class='large-12 columns'>" +
-            "<div class='callout secondary'>" +
-                "<p>" + name + " (" + id + ", nXN)</p>" +
-                "<div class='slider' data-slider data-initial-start='0' data-end='15'>"+
-                    "<span class='slider-handle' data-slider-handle role='slider' " +
-                    "tabindex='1' onclick='$.ajax(\"/socket/dim?address=" + str(address) +
-                    "&unit=" + str(unit) +
-                    "&dimValue=\" + $(\"#" + id + "\").val());'></span>" +
-                    "<span class='slider-fill' data-slider-fill></span>" +
-                    "<input id='" + id + "' type='hidden'></div>" +
-                "<button class='alert expanded button' " +
-                    "onclick='$.ajax(\"/socket/switch?address=" + str(address) +
-                    "&unit=" + str(unit) +
-                    "&state=0\");' >Aus</button>" +
-            "</div>" +
-            "</div>"
-            )
+            return """
+            <div class='large-12 columns'>
+                <div class='callout secondary'>
+                    <p>{n} ({a}_{u}, nXN)</p>
+                    <div class='slider' data-slider data-initial-start='0' data-end='15'>
+                        <span class='slider-handle' data-slider-handle role='slider'
+                          tabindex='1' onclick='$.ajax(
+                          "/socket/dim?address={a}&unit={u}&dimValue="
+                          + $("#{i}").val());'>
+                        </span>
+                        <span class='slider-fill' data-slider-fill></span>
+                        <input id='{i}' type='hidden'></div>
+                        <button class='alert expanded button' onclick='$.ajax(
+                          "/socket/switch?address={a}&unit={u}&state=0");'>Aus
+                        </button>
+                    </div>
+                </div>
+            """.format(n=name, a=str(address), u=str(unit), i=id)
 
-    # buttons that control the rules
+    # control rules
     class Rule():
 
         @cherrypy.expose
@@ -215,19 +220,21 @@ class Webserver(object):
                 checked = "checked "
             else:
                 checked = ""
-            return (
-            "<tr><td>" + name + "</td>" +
-                "<td><div class='switch'>" +
-                     "<input class='switch-input' id= '" + name + "' type='checkbox' " + checked +
-                         "onclick='$.ajax(\"/rule/toggle_rule_keep_alive?" +
-                        "position=" + str(position) +
-                        "&keep_alive=\" + event.target.checked);'>" +
-                     "<label class='switch-paddle' for='" + name + "'></label>" +
-                "</div></td>" +
-            "</td>"
-            )
+            return """
+            <tr>
+                <td>{n}</td>
+                <td>
+                    <div class='switch'>
+                        <input class='switch-input' id='{n}' type='checkbox' {c} onclick=
+                          '$.ajax("/rule/toggle_rule_keep_alive?position={p}&keep_alive="
+                          + event.target.checked);'>
+                        <label class='switch-paddle' for='{n}'></label>
+                    </div>
+                </td>
+            </tr>
+            """.format(n=name, p=str(position), c=checked)
 
-    # queries that provide additional informationen
+    # provides additional informationen
     class AdditionalInformation():
         @cherrypy.expose
         def connected_devices(self):
@@ -235,29 +242,33 @@ class Webserver(object):
                 return "<li>Keine Geräte angeschlossen</li>"
             string = ""
             for key in tinkerforge_connection.current_entries:
-                string += "<li>"+key+" ("+tinkerforge_connection.current_entries[key]+")</li>"
+                string += ("<li>{0} ({1})</li>"
+                           .format(key, tinkerforge_connection.current_entries[key]))
             return string
 
         @cherrypy.expose
         def amm_illuminance(self):
             return (
-            "<li id='information_amm_illuminance'>Aktuelle Helligkeit (amm): " +
-            str(tinkerforge_connection.get_illuminance("amm")) + " Lux</li>"
+                "<li id='information_amm_illuminance'>Aktuelle Helligkeit (amm): " +
+                str(tinkerforge_connection.get_illuminance("amm")) + " Lux</li>"
             )
 
         @cherrypy.expose
         def bvg(self):
             array = bvg.call()
-            if array == None:
+            if array is None:
                 return "<li>Keine Abfahrtzeiten verfügbar</li>"
             string = ""
             for entry in array:
-                string += "<li>"+entry[3] + " -> " + entry[1]+ " (" + entry[2] + ")</li>"
+                string += "<li>{0} -> {1} ({2})</li>".format(entry[3], entry[1], entry[2])
             return string
 
+
 ##########################################################################################
-#The Entrypoint of the Application
+# The Entrypoint of the Application
 ##########################################################################################
+
+
 if __name__ == '__main__':
     # the configuration for the webserver
     conf = {
@@ -278,7 +289,7 @@ if __name__ == '__main__':
         }
     }
 
-    #the logging configuratoin
+    # the logging configuratoin
     log_conf = {
         'version': 1,
 
@@ -292,14 +303,14 @@ if __name__ == '__main__':
         },
         'handlers': {
             'default': {
-                'level':'INFO',
-                'class':'logging.StreamHandler',
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
                 'formatter': 'standard',
                 'stream': 'ext://sys.stdout'
             },
             'default_file': {
-                'level':'INFO',
-                'class':'logging.handlers.RotatingFileHandler',
+                'level': 'INFO',
+                'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'standard',
                 'filename': 'default.log',
                 'maxBytes': 10485760,
@@ -307,14 +318,14 @@ if __name__ == '__main__':
                 'encoding': 'utf8'
             },
             'cherrypy_default_error': {
-                'level':'INFO',
-                'class':'logging.StreamHandler',
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
                 'formatter': 'standard',
                 'stream': 'ext://sys.stdout'
             },
             'cherrypy_default_error_file': {
-                'level':'INFO',
-                'class':'logging.handlers.RotatingFileHandler',
+                'level': 'INFO',
+                'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'standard',
                 'filename': 'cherrypy_default_error.log',
                 'maxBytes': 10485760,
@@ -322,7 +333,7 @@ if __name__ == '__main__':
                 'encoding': 'utf8'
             },
             'cherrypy_access': {
-                'level':'INFO',
+                'level': 'INFO',
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'void',
                 'filename': 'cherrypy_access.log',

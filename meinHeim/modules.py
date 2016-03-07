@@ -1,23 +1,26 @@
 import logging
 
-log = logging.getLogger() # the logger
+log = logging.getLogger()  # the logger
+
 
 ##########################################################################################
-#Tinkerforge Module
+# Tinkerforge Module
 ##########################################################################################
+
 
 from tinkerforge.ip_connection import IPConnection
 from tinkerforge.bricklet_remote_switch import BrickletRemoteSwitch
 from tinkerforge.bricklet_ambient_light import BrickletAmbientLight
 from tinkerforge.bricklet_distance_us import BrickletDistanceUS
 
+
 class TinkerforgeConnection(object):
     # Connection to the Brick Daemon on localhost and port 4223
-
     ipcon = None
     current_entries = dict()
 
-    def cb_enumerate(self, uid, connected_uid, position, hardware_version, firmware_version, device_identifier, enumeration_type):
+    def cb_enumerate(self, uid, connected_uid, position, hardware_version,
+                     firmware_version, device_identifier, enumeration_type):
 
         if enumeration_type == IPConnection.ENUMERATION_TYPE_DISCONNECTED:
             del self.current_entries[uid]
@@ -32,7 +35,8 @@ class TinkerforgeConnection(object):
             elif device_identifier == 235:
                 self.current_entries.update({uid: "RemoteSwitchBricklet"})
             else:
-                self.current_entries.update({uid: "device_identifier = "+device_identifier})
+                self.current_entries.update(
+                    {uid: "device_identifier = {0}".format(device_identifier)})
 
     def switch_socket(self, uid, address, unit, state):
         rs = BrickletRemoteSwitch(uid, self.ipcon)
@@ -64,15 +68,19 @@ class TinkerforgeConnection(object):
         self.ipcon.register_callback(IPConnection.CALLBACK_ENUMERATE, self.cb_enumerate)
         self.ipcon.enumerate()
 
+
 ##########################################################################################
-#BVG Module
+# BVG Module
 ##########################################################################################
+
 
 from bs4 import BeautifulSoup
 import requests
-class BVG(object):
 
-    ACTUAL_API_ENDPOINT = 'http://mobil.bvg.de/Fahrinfo/bin/stboard.bin/dox?&boardType=depRT'
+
+class BVG(object):
+    ACTUAL_API_ENDPOINT = (
+        'http://mobil.bvg.de/Fahrinfo/bin/stboard.bin/dox?&boardType=depRT')
 
     def __init__(self, station, limit=5):
         if isinstance(station, str):
@@ -108,11 +116,8 @@ class BVG(object):
                     if row.parent.name == 'tbody':
                         td = row.find_all('td')
                         if td:
-                            dep = [self.station,
-                                    td[2].text.strip(),
-                                    td[0].text.strip(),
-
-                                    td[1].text.strip()]
+                            dep = [self.station, td[2].text.strip(), td[0].text.strip(),
+                                   td[1].text.strip()]
                             departures.append(dep)
                 return departures
         else:
