@@ -23,7 +23,6 @@ bvg = None
 rules = None
 log = logging.getLogger()  # the logger
 
-
 ##########################################################################################
 # Collection of all Rules
 ##########################################################################################
@@ -236,6 +235,8 @@ class Webserver(object):
 
     # provides additional informationen
     class AdditionalInformation():
+        wakeup_time = "0:0"
+
         @cherrypy.expose
         def connected_devices(self):
             if len(tinkerforge_connection.current_entries) == 0:
@@ -262,6 +263,15 @@ class Webserver(object):
             for entry in array:
                 string += "<li>{0} -> {1} ({2})</li>".format(entry[3], entry[1], entry[2])
             return string
+
+        @cherrypy.expose
+        def set_wakeup_time(self, time):
+            self.wakeup_time = time
+            log.info("Set wakeup time to {0}.".format(time))
+
+        @cherrypy.expose
+        def get_wakeup_time(self):
+            return self.wakeup_time
 
 
 ##########################################################################################

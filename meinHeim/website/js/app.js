@@ -1,6 +1,28 @@
 $(document).foundation();
 $(document).ready(function() {
 
+	//initialize timepicker
+	$('#weckzeit').timepicker({ 'timeFormat': 'H:i' });
+	$('#weckzeit').on("change", function() {
+		$.ajax("/additional_information/set_wakeup_time?time=" + $('#weckzeit').val());
+	});
+
+	//Load old wakeup time
+	$.ajax({
+		type: "GET",
+		url: "/additional_information/get_wakeup_time",
+	})
+	.done(function(string) {
+		split = string.split(":");
+		date = new Date()
+		date.setHours(parseInt(split[0]));
+		date.setMinutes(parseInt(split[1]));
+		$('#weckzeit').timepicker(
+			'setTime',
+			date
+		);
+	});
+
 	//Load socket list
 	$.ajax({
 		type: "GET",
