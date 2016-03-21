@@ -101,6 +101,7 @@ class Rules(object):
                 if wakup.minute >= 10:
                     time_until_wakup = wakup.minute - now.minute
                     if (wakup.hour == now.hour and time_until_wakup == 10):
+                        log.info("Beginning to light up the bedroom, wake up!")
                         for i in range(15):
                             tinkerforge_connection.dim_socket("nXN", 25, 1, i)
                             time.sleep(30)
