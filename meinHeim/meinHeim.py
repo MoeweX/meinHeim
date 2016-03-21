@@ -22,6 +22,7 @@ tinkerforge_connection = None
 bvg = None
 rules = None
 log = logging.getLogger()  # the logger
+wakeup_time = "0:0"
 
 ##########################################################################################
 # Collection of all Rules
@@ -92,6 +93,23 @@ class Rules(object):
                 time.sleep(50)
             log.info(self.tname + " was no longer kept alive.")
 
+    class Wakup_Rule(Generale_Rule):
+        def rule(self):
+            while self.keep_alive:
+                wakup = datetime.datetime.strptime(wakeup_time, "%H:%M")
+                now = datetime.datetime.now()
+                if wakup.minute >= 10:
+                    time_until_wakup = wakup.minute - now.minute
+                    if (wakup.hour == now.hour and time_until_wakup == 10):
+                        for i in range(15):
+                            tinkerforge_connection.dim_socket("nXN", 25, 1, i)
+                            time.sleep(30)
+                else:
+                    log.warn("We don't support wakup times with minute <10 currently.")
+                    self.deactivate_rule()
+                time.sleep(50)
+            log.info(self.tname + " was no longer kept alive.")
+
     # define public variables for all rules
     active_rules = None
 
@@ -100,6 +118,7 @@ class Rules(object):
         self.active_rules = [
             # Rules.Watering_Rule("Bewässerungsregel (9 + 19)"),
             Rules.Balkon_Rule("Balkonregel (17 - 22)"),
+            Rules.Wakup_Rule("Weckregel")
         ]
 
 
@@ -235,7 +254,6 @@ class Webserver(object):
 
     # provides additional informationen
     class AdditionalInformation():
-        wakeup_time = "0:0"
 
         @cherrypy.expose
         def connected_devices(self):
@@ -266,12 +284,14 @@ class Webserver(object):
 
         @cherrypy.expose
         def set_wakeup_time(self, time):
-            self.wakeup_time = time
+            global wakeup_time
+            wakeup_time = time
             log.info("Set wakeup time to {0}.".format(time))
 
         @cherrypy.expose
         def get_wakeup_time(self):
-            return self.wakeup_time
+            global wakeup_time
+            return wakeup_time
 
 
 ##########################################################################################
