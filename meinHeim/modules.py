@@ -2,6 +2,47 @@ import logging
 
 log = logging.getLogger()  # the logger
 
+##########################################################################################
+# Collection of all Rules
+##########################################################################################
+
+
+from threading import Thread
+import time
+
+
+class Rule(object):
+    def activate_rule(self):
+        self.keep_alive = True
+        if self.thread is not None:  # check whether already initialized
+            if self.thread.isAlive():  # check whether was still alive
+                log.info(self.tname + " was still alive!")
+                return
+
+        # not initialized or dead, does not matter
+        log.info("Activated Rule " + self.tname + ".")
+        self.thread = Thread(name=self.tname, target=self.rule)
+        self.thread.setDaemon(True)
+        self.thread.start()
+
+    def rule(self):
+        while self.keep_alive:
+            self.rule_logic()
+            time.sleep(self.sleep_time)
+
+        log.info(self.tname + " was no longer kept alive.")
+
+    def deactivate_rule(self):
+        log.info("Rule " + self.tname + " will not be kept alive.")
+        self.keep_alive = False
+
+    def __init__(self, tname, rule_logic, sleep_time):
+        self.tname = tname
+        self.rule_logic = rule_logic  # a method that gets executed when alive
+        self.sleep_time = sleep_time  # time after which the rule_logic is started again
+        self.keep_alive = False  # if True, the rule gets repeated after sleep_time
+        self.thread = None  # the thread used to repeat the rule_logic
+
 
 ##########################################################################################
 # Tinkerforge Module
@@ -19,8 +60,9 @@ class TinkerforgeConnection(object):
     ipcon = None
     current_entries = dict()
 
-    def cb_enumerate(self, uid, connected_uid, position, hardware_version,
-                     firmware_version, device_identifier, enumeration_type):
+    # noinspection PyUnusedLocal
+    def cb_enumerate(self, uid, connected_uid, position, hardware_version, firmware_version, device_identifier,
+                     enumeration_type):
 
         if enumeration_type == IPConnection.ENUMERATION_TYPE_DISCONNECTED:
             del self.current_entries[uid]
@@ -62,9 +104,9 @@ class TinkerforgeConnection(object):
             log.warn(uid + " not connected")
             return -1
 
-    def __init__(self):
+    def __init__(self, ip_address):
         self.ipcon = IPConnection()
-        self.ipcon.connect("localhost", 4223)
+        self.ipcon.connect(ip_address, 4223)
         self.ipcon.register_callback(IPConnection.CALLBACK_ENUMERATE, self.cb_enumerate)
         self.ipcon.enumerate()
 
@@ -109,7 +151,7 @@ class BVG(object):
                 result = soup.find('div', {'id': '',
                                            'class': 'ivu_result_box'})
                 if result is None:
-                    return Response(True, self.station, [])
+                    return None
                 rows = result.find_all('tr')
                 departures = []
                 for row in rows:
