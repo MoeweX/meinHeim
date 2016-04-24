@@ -2,3 +2,5 @@
 *lib.*
 *.pyc
 *.log
+ENV/*
+*.idea/*

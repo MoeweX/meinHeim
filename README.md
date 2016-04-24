@@ -1,3 +1,6 @@
+# ToDo
+* Store sockets and dims in tinkerforge_connection, so that it can be used more easily.
+
 #Target Group
 People familiar with Python, HTML and Javascript who want their own lightweight, customized smart home system. The system here is highly adjusted to meet my needs, but they follow some easy paradigms so feel free to use them for your own home. If you create interesting modules I would be happy if you contribute them back to the project :).
 
